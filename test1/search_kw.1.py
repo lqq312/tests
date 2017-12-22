@@ -1,8 +1,6 @@
-#!/usr/bin/env test1_363
 # encoding=utf-8
 
 from prettytable import PrettyTable
-from fileinput import input
 from _dummy_thread import exit
 
 # 定义第一层菜单内容
@@ -13,7 +11,7 @@ Start_Menu="""\033[32ma)\033[0m Display all employee information
 # 打印菜单并返回用户输入
 def _get_start_enter():
     print(Start_Menu)
-    User1Enter=input("Please select the option you want to perform: ")
+    User1Enter=input("Please select option you want to perform: ")
     return User1Enter
 
 # 显示所有员工信息
@@ -40,7 +38,7 @@ def _search_kw(x):
             FindFlag1 = Line.find(x)
             if FindFlag1 > 0:
                 print(Line)
-                SearchCount += 1
+                SearchCount1 += 1
         
         if SearchCount1 == 0:
             print("Your keyword was not found.")
@@ -56,20 +54,22 @@ def _is_continue():
     User3Enter=input("Please select the option you want to perform: ")
     return User3Enter
 
-#while True:
-Enter1 = _get_start_enter()
-if Enter1 == "a":
-    _display_all_info()
-elif Enter1 == "b":
-    while True:
-        Enter2 = _get_second_enter()
-        _search_kw(Enter2)
-        Enter3 = _is_continue()
-        if Enter3 == "a":
-            pass
-        elif Enter3 == "b":
-            continue
-        elif Enter3 == "c":
-            break
-elif Enter1 == "c":
-    pass
+while True:
+    Enter1=_get_start_enter()
+    if Enter1 == "a":
+        _display_all_info()
+    elif Enter1 == "b":
+        while True:
+            Enter2 = _get_second_enter()
+            _search_kw(Enter2)
+            Enter3 = _is_continue()
+            if Enter3 == "a":
+                pass
+            elif Enter3 == "b":
+                break
+            elif Enter3 == "c":
+                exit()
+    elif Enter1 == "c":
+        exit()
+    else:
+        exit()
