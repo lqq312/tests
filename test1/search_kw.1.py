@@ -36,11 +36,11 @@ def _search_kw(x):
         SearchCount1 = 0
         for Line in AllEmployeeInfo:
             FindFlag1 = Line.find(x)
-            if FindFlag1 > 0:
+            if FindFlag1 >= 0:
                 print(Line)
                 SearchCount1 += 1
         
-        if SearchCount1 == 0:
+        if SearchCount1 < 0:
             print("Your keyword was not found.")
 
 # 打印菜单并提示是否继续
