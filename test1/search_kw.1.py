@@ -2,6 +2,7 @@
 
 from prettytable import PrettyTable
 from _dummy_thread import exit
+from colorama import Fore
 
 # 定义第一层菜单内容
 Start_Menu="""\033[32ma)\033[0m Display all employee information
@@ -36,9 +37,10 @@ def _search_kw(x):
         SearchCount1 = 0
         for Line in AllEmployeeInfo:
             FindFlag1 = Line.find(x)
+            NKW=Fore.GREEN + x + Fore.RESET
             if FindFlag1 >= 0:
-                print(Line)
                 SearchCount1 += 1
+                print(Line.replace(x,NKW,SearchCount1))
         
         if SearchCount1 < 0:
             print("Your keyword was not found.")
