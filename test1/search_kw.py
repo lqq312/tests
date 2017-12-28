@@ -7,7 +7,7 @@
 from prettytable import PrettyTable
 
 def Display_All_Info_():
-    with open("/projects/test1/employee_info","r") as EmployeeInfo:
+    with open("/tests/test1/employee_info","r") as EmployeeInfo:
         # 设置表格格式与对齐
         AllInfoTable = PrettyTable(["User Name","Phone Num","Address","Email"])
         AllInfoTable.align["User Name"]="l"
@@ -22,16 +22,14 @@ def Display_All_Info_():
 Menu="""\033[32ma)\033[0m Display all employee information
 \033[32mb)\033[0m Find the specified employee information
 \033[32mc)\033[0m quit"""
-UserChoice=""
 
 def Menu_():
     print(Menu)
     UserChoice=input("Please select the option you want to perform: ")
     return UserChoice
 
-UserChoice=Menu_()
-
 while True:
+    UserChoice=Menu_()
     if UserChoice == "a":
         Display_All_Info_()
         break
