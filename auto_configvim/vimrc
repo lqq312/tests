@@ -1,0 +1,377 @@
+"~/.vimrc (configuration file for vim only)
+
+" Encoding related
+set fileencodings=utf-8,gb2312,gbk,gb18030
+set termencoding=utf-8
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" vundle begin
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+filetype off                " required!
+
+set rtp+=~/.vim/bundle/vundle/
+call vundle#rc()
+
+" let Vundle manage Vundle
+Bundle 'gmarik/vundle'
+
+" vim-scripts repos
+
+"  Improved C++ STL syntax highlighting
+Bundle 'STL-improved'
+
+" Displays tags in a window, ordered by class etc, i used it instead of taglist
+Bundle 'majutsushi/tagbar'
+Bundle 'wesleyche/SrcExpl'
+
+" recommend fetch it from https://github.com/tczengming/autoload_cscope.vim.git which support c and cpp
+Bundle 'tczengming/autoload_cscope.vim'
+
+" CmdlineComplete E.g: you want to search for "elephant" in the buffer, just type /ele and
+" press Ctrl-P. So long as "elephant" is in the buffer, you will get "ele"
+" completed into "elephant". 
+Bundle 'CmdlineComplete'
+Bundle 'Valloric/YouCompleteMe'
+Bundle 'Valloric/ListToggle'
+
+"Code snippets engine for Vim
+Bundle 'xptemplate'
+
+Bundle 'DoxygenToolkit.vim'
+
+" C/C++ header files should be guarded against multiple inclusions using preprocessor directives
+Bundle 'tczengming/headerGatesAdd.vim'
+
+Bundle 'genutils'
+Bundle 'lookupfile'
+
+" Fuzzy file, buffer, mru, tag, ... finder with regexp support.
+Bundle 'kien/ctrlp.vim'
+
+" Fast file navigation
+Bundle 'wincent/Command-T'
+
+" Preview the definition of variables or functions in a preview window
+Bundle 'autopreview'
+
+" Echo the function declaration in the command line for C/C++
+Bundle 'echofunc.vim'
+
+Bundle 'grep.vim'
+Bundle 'a.vim'
+Bundle 'The-NERD-Commenter'
+Bundle 'The-NERD-tree'
+
+" Under linux need exec 'dos2unix ~/.vim/bundle/QFixToggle/plugin/qfixtoggle.vim'
+Bundle 'QFixToggle'
+
+Bundle 'Color-Sampler-Pack'
+Bundle 'altercation/vim-colors-solarized'
+Bundle 'txt.vim'
+
+Bundle 'mru.vim'
+Bundle 'YankRing.vim'
+
+Bundle 'tpope/vim-surround.git'
+Bundle 'ShowMarks'
+
+" Display error marks on line which contain errors after compilation 
+Bundle 'cuteErrorMarker'
+
+"Bundle 'Lokaltog/vim-powerline'
+Bundle 'bling/vim-airline'
+
+Bundle 'git://github.com/Lokaltog/vim-easymotion.git'
+
+" non github repos
+" ...
+filetype plugin indent on   " required! 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" vundle end
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" solarized theme
+set t_Co=256                " Explicitly tell vim that the terminal supports 256 colors, need before setting the colorscheme
+let g:solarized_termcolors=256
+colorscheme solarized
+set background=dark
+hi Normal  ctermfg=252 ctermbg=none     " Transparent background
+
+" Enable syntax highlighting
+syntax on
+
+set number
+set autochdir
+
+" Set to auto read when a file is changed from the outside
+set autoread
+
+set backupdir=~/.vim/backup
+set directory=~/.vim/backup
+
+set laststatus=2            " always have status-line'
+"set statusline=%F%m%r%h%w\ %{&ff}\ %Y\ [ascii:%b\ hex:0x\%02.2B]\ [%{(&fenc\ ==\ \"\"?&enc:&fenc).(&bomb?\",BOM\":\"\")}]\ %=%l/%L,%v\ %p%%
+
+" allow backspacing over everything in insert mode
+set backspace=indent,eol,start
+
+" Most commands for moving around will stop moving at the start and end of a line. You can change that with the 'whichwrap' option
+set whichwrap+=b,s,<,>,[,]
+
+" Tab related
+set shiftwidth=4
+set tabstop=4
+set softtabstop=4
+set expandtab               " Use spaces instead of tabs
+                        
+set list
+set listchars=tab:\|\ ,     " display tab as '|'
+
+" Indent related, see indent.txt
+" gN Place C++ scope declarations N characters from the indent of the
+"    block they are in.  (default 'shiftwidth').  A scope declaration
+"    can be "public:", "protected:" or "private:".
+" :N Place case labels N characters from the indent of the switch()
+" N-s namespace 
+" (N    When in unclosed parentheses, indent N characters from the line with the unclosed parentheses.
+set cinoptions=g0,:0,N-s,(0
+
+set autoindent      " always set autoindenting on
+set smartindent
+
+set mps+=<:>        " also apply matching to < and >
+set hid             " allow to change buffer without saving 
+set shortmess=atI   " shortens messages to avoid 'press a key' prompt 
+set lazyredraw      " do not redraw while executing macros (much faster)
+
+" Set Number format to null(default is octal) , when press CTRL-A on number
+" like 007, it would not become 010
+set nf=
+
+" In Visual Block Mode, cursor can be positioned where there is no actual character
+set ve=block
+
+set ignorecase  " Set search/replace pattern to ignore case 
+set smartcase   " Set smartcase mode on, If there is upper case character in the search patern, the 'ignorecase' option will be override.
+set showcmd     " display incomplete commands
+set incsearch   " do incremental searching
+set hlsearch    " highlight search
+set magic       " Enable magic matching
+set showmatch   " show matching paren
+set wildmenu    " enables a menu at the bottom of the vim/gvim window.
+"set mouse=a    " Enable mouse usage (all modes) in terminals
+
+" showmarks setting
+let showmarks_enable = 0            " disable showmarks when vim startup
+let showmarks_include = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+let showmarks_ignore_type = "hqm"   " help, Quickfix, non-modifiable
+
+" NERDTree options
+" Auto change the root directory
+let NERDTreeChDirMode=2
+let g:NERDTreeWinSize = 20
+
+" Tagbar options
+let g:tagbar_width = 25
+
+let g:DoxygenToolkit_blockHeader="--------------------------------------------------------------------------"
+let g:DoxygenToolkit_blockFooter="--------------------------------------------------------------------------"
+let g:DoxygenToolkit_authorName="youname" 
+let g:DoxygenToolkit_versionString="1.0.0.0"
+let g:DoxygenToolkit_briefTag_funcName="yes"
+autocmd BufNewFile *.{h,hpp,c,cpp} DoxAuthor 
+
+" Switching between buffers. 
+nnoremap <C-h> <C-W>h
+nnoremap <C-j> <C-W>j
+nnoremap <C-k> <C-W>k
+nnoremap <C-l> <C-W>l
+inoremap <C-h> <Esc><C-W>h
+inoremap <C-j> <Esc><C-W>j
+inoremap <C-k> <Esc><C-W>k
+inoremap <C-l> <Esc><C-W>l
+
+" Set Up and Down non-linewise
+noremap <Up> gk
+noremap <Down> gj
+
+" use Meta key(Windows:Alt) to move cursor in insert mode. 
+" Note: if system install "Lingoes Translator", 
+"   you will need change/disabled hot key. 
+noremap! <M-j> <Down>
+noremap! <M-k> <Up>
+noremap! <M-h> <left>
+noremap! <M-l> <Right>
+
+" allow multiple indentation/deindentation in visual mode
+vnoremap < <gv
+vnoremap > >gv
+
+" open ctags entries in a new tab
+nnoremap <silent><Leader><C-]> <C-w><C-]><C-w>T
+
+set pastetoggle=<F2>
+
+" grep.vim
+let g:Grep_Skip_Dirs = 'RCS CVS SCCS .git .svn'
+let g:Grep_Skip_Files = '*.out *.bak *~ *.swp *.log *tags *.o *.a *.so'
+nnoremap <silent> <F3> :Grep<CR>
+nnoremap <silent> <F4> :Rgrep<CR>
+
+" autopreview
+let g:AutoPreview_enabled = 0
+let g:EchoFuncKeyNext='<C-n>' 
+let g:EchoFuncKeyPrev='<C-p>'
+nnoremap <F6> :AutoPreviewToggle<CR>
+inoremap <F6> <ESC>:AutoPreviewToggle<CR>i 
+
+" --lookupfile--
+"  script to generate filenametags
+"  #!/bin/sh
+"  # generate tag file for lookupfile plugin, use absolute path
+"  echo -e "!_TAG_FILE_SORTED\t2\t/2=foldcase/" > filenametags
+"  find `pwd` -not -regex '.*\.\(png\|gif\)' -type f -printf "%f\t%p\t1\n" | \
+"      sort -f >> filenametags 
+"      
+let g:LookupFile_MinPatLength = 2
+let g:LookupFile_PreserveLastPattern = 0        "Don't save last pattern
+"let g:LookupFile_PreservePatternHistory = 1    "Save history
+let g:LookupFile_AlwaysAcceptFirst = 1          "Enter to open 1st
+let g:LookupFile_AllowNewFiles = 0              "Don't allow create file
+if filereadable("./filenametags")               "Set name
+let g:LookupFile_TagExpr ='"./filenametags"'
+endif
+
+"ctrlp
+let g:ctrlp_user_command = 'find %s -type f'
+
+set tags=tags;
+
+" -- cscope --
+let g:autocscope_menus=0
+if has("cscope") 
+    set csprg=/usr/bin/cscope
+    " Use both cscope and ctag
+    set cscopetag
+    " Show msg when cscope db added
+    set cscopeverbose
+    " Use cscope for definition search first
+    set cscopetagorder=0
+endif
+
+nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR>
+nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+
+" fix ctrl+] incorrect when cscope togethoer with tag 
+nmap <C-]> :tj <C-R>=expand("<cword>")<CR><CR>
+
+"Fast remove highlight search
+nmap <silent> <leader><cr> :noh<cr>
+
+" Underlined long lines
+au BufRead,BufNewFile *.asm,*.c,*.cpp,*.java,*.cs,*.sh,*.lua,*.pl,*.pm,*.py,*.rb,*.hs,*.vim 2match Underlined /.\%81v/
+
+" Highlight long lines
+"au BufWinEnter * let w:m1=matchadd('Search', '\%<88v.\%>81v', -1)
+"au BufWinEnter * let w:m2=matchadd('ErrorMsg', '\%>80v.\+', -1)
+
+"highlight .txt, required txt.vim
+au BufRead,BufNewFile * setfiletype txt
+
+"au BufWritePost       .vimrc              source %
+
+" Restore the last quit position when open file. 
+ autocmd BufReadPost * 
+    \ if line("'\"") > 0 && line("'\"") <= line("$") | 
+     \     exe "normal g'\"" | 
+     \ endif
+
+function! AutoUpdateTheLastUpdateInfo()
+    let s:original_pos = getpos(".")
+    let s:regexp = "^\\s*\\([#\\\"\\*]\\|\\/\\/\\)\\s\\?[lL]ast \\([uU]pdate\\|[cC]hange\\):"
+    let s:lu = search(s:regexp)
+    if s:lu != 0
+        let s:update_str = matchstr(getline(s:lu), s:regexp)
+        call setline(s:lu, s:update_str . strftime("%Y-%m-%d %H:%M:%S", localtime()))
+        call setpos(".", s:original_pos)
+    endif
+endfunction
+autocmd BufWritePost *.{h,hpp,c,cpp} call AutoUpdateTheLastUpdateInfo()
+autocmd BufNewFile *.{h,hpp,c,cpp} exec 'call append(0, "\/\/ Last Update:" . strftime("%Y-%m-%d %H:%M:%S", localtime()))'
+
+function! ToggleNERDTreeAndTagbar()
+    let w:jumpbacktohere = 1
+
+    " Detect which plugins are open
+    if exists('t:NERDTreeBufName')
+        let nerdtree_open = bufwinnr(t:NERDTreeBufName) != -1
+    else
+        let nerdtree_open = 0
+    endif
+    let tagbar_open = bufwinnr('__Tagbar__') != -1
+
+    " Perform the appropriate action
+    if nerdtree_open && tagbar_open
+        NERDTreeClose
+        TagbarClose
+    elseif nerdtree_open
+        TagbarOpen
+    elseif tagbar_open
+        NERDTree
+    else
+        NERDTree
+        TagbarOpen
+    endif
+
+    " Jump back to the original window
+    for window in range(1, winnr('$'))
+        execute window . 'wincmd w'
+        if exists('w:jumpbacktohere')
+            unlet w:jumpbacktohere
+            break
+        endif
+    endfor
+endfunction
+
+nmap <F8> :call ToggleNERDTreeAndTagbar()<CR>
+
+function! DoxygenOneLineCommentTag()
+    exe "normal A\t"
+    let l:wRow = line(".")
+    let l:wCol = col(".")
+    while l:wCol < 36
+        exe "normal A    "
+        let l:wCol = col(".")
+    endwhile
+    exe "normal A/**<  */"
+    exe "normal 2h"
+endfunction
+nmap <leader>c4 <Esc>:call DoxygenOneLineCommentTag()<CR>i
+
+" Enter key will simply select the highlighted menu item, just as <C-Y> does
+inoremap <expr> <CR> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+
+autocmd InsertLeave * if pumvisible() == 0|pclose|endif   " autoclose preview window when leave insert mode
+nnoremap <leader>jd :YcmCompleter GoToDefinitionElseDeclaration<CR>
+let g:ycm_confirm_extra_conf=0  " Do not ask when starting vim
+let g:ycm_cache_omnifunc=0 "ensure that the omnicompletion engine is requeried on every keypress
+let g:ycm_seed_identifiers_with_syntax=1
+let g:ycm_global_ycm_extra_conf = '~/.ycm_extra_conf.py'
+let g:ycm_complete_in_comments = 1
+let g:ycm_complete_in_strings = 1
+let g:syntastic_error_symbol = 'x'
+let g:syntastic_warning_symbol = '⚠'
+
+" make YCM compatible with xtemplate
+let g:ycm_key_list_select_completion = ['<c-n>', '<Down>']
+let g:ycm_key_list_previous_completion = ['<c-p>', '<Up>']
+
+" whether to show balloons  press <leader>l to toogle
+let g:syntastic_enable_balloons = 1
+let g:syntastic_always_populate_loc_list = 1
