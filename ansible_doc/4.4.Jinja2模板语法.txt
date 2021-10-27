@@ -1,0 +1,153 @@
+Jinja2模板语法：
+    Ansible使用Jinja2模板来启用动态表达式和对变量的访问
+
+templates的功能：
+    1、templates文件必须存放于templates目录下，且文件名以“.j2”结尾；
+    2、yaml/yml文件必需与“templates”目录平级，目录结构如下：
+        ./
+          ├──temnginx.yaml
+          └──templates
+              └──nginx.conf.j2
+
+模板templates：
+    1、文本文件，嵌套有脚本（使用模板编程语言编写）；
+    2、Jinja2语言，使用字面量，有以下几和形式：
+        a、字符串，使用单引号或双引号；
+        b、数字，整数，浮点数；
+        c、列表，[item1,item2,...]；
+        d、元组，(item1,item2,...)；
+        e、字典，{key1:value1,key2:value2,...}；
+        f、布尔型，True/False；
+    3、算术运算，+、-、*、/、//、%、**；
+    4、比较操作，==、!=、>、>=、<、<=；
+    5、逻辑运算，and、or、not；
+    6、流表达式，For、If、When。
+
+    示例：安装“nginx”服务，并使用其“worker”进程数为cpu核心数的“2”倍。(相关文件参见example1/Jinja2_temp1)
+        # tree ./
+            ./
+              ├──site.yaml
+              └──templates
+                  └──nginx.conf.j2
+        # cat site.yaml
+            ---
+            - hosts: test-area
+              remote_user: root
+
+              tasks:
+                - name: install nginx
+                  yum: name=nginx state=latest
+                - name: defined nginx config file
+                  template: src=templates/nginx.conf.j2 dest=/etc/nginx/nginx.conf
+                  notify: set nginx service restart
+                - name: defined nginx service started
+                  service: name=nginx state=started enabled=yes
+
+              handlers:
+                - name: set nginx service restart
+                  service: name=nginx state=restarted
+        # cat templates/nginx.conf.j2
+            #user  nobody;
+            worker_processes  {{ ansible_processor_vcpus*2 }};
+
+            #error_log  logs/error.log;
+            #error_log  logs/error.log  notice;
+            ...
+            ...
+                #        index  index.html index.htm;
+                #    }
+                #}
+
+            }
+
+when：
+    1、条件测试：如果需要根据变量，facts或此前任务的执行结果来做为某“task”执行与否的前提时要用到条件测试，通过“when”语名实现，在“task”中使用，“jinja2”的语法格式；
+    2、在“task”后添加“when”子句即可使用条件测试；
+    3、“when”语句支持“Jinja2”表达式语法。
+
+    示例：
+        tasks:
+          - name: "shutdown RedHat flavored system"
+            command: /sbin/shutdown -h now
+            when: ansible_os_family == "RedHat"
+
+with_items：迭代
+    1、当有需要重复性执行的任务时，可以使用迭代机制；
+    2、对迭代项的引用，固定变量为“item”；
+    3、要在“task”中使用“with_items”给定要迭代的元素列表；
+    4、列表格式：字符串、字典。
+
+    迭代嵌套子变量：
+        - hosts: all
+          remote_user: root
+          tasks:
+            - name: add some groups
+              group: name={{ item }} state=present
+              with_items:
+                - group1
+                - group2
+                - group3
+            - name: add some users
+              user: name={{ item.name }} group={{ item.group }} state=present
+              with_items:
+                - { name: 'user1', group: 'group1' }
+                - { name: 'user2', group: 'group2' }
+                - { name: 'user3', group: 'group3' }
+
+Playbook中的template的for循环：
+    {% for VALUE in LIST %}
+    ......
+    {% endfor %}
+
+    示例：详见example1/for_temp1（其变量为列表）和example1/for_temp2（其变量为列表中的键值对）。
+        {% for vhost in nginx_vhosts %}
+        server {
+            listen {{ vhost.listen | default('80 default_server') }}
+        }
+        {% endfor %}
+
+Playbook中template的if表达式：
+    {% if EXPRESSION %}
+    ...
+    {% endif %}
+
+        示例：
+            {% if vhost.server_name is defined %}
+            server_name {{ vhost.server_name }}
+            {% endif %}
+
+    if表达式：
+        
+
+格式化数据过滤器：
+    更改数据格式，将指定类型数据转换为字符串：
+        {{ some_variable | to_json }}
+        {{ some_variable | to_yaml }}
+    将json或yaml数据转换为人类可读的输出：
+        {{ some_variable | to_nice_json }}
+        {{ some_variable | to_nice_yaml }}
+    还可增加参数（在Ansible 2.2时增加）：
+        {{ some_variable | to_nice_json(indent=2) }}
+        {{ some_variable | to_nice_yaml(indent=8) }}
+    从json字符串读取，其结果为json类型：
+        {{ some_variable | from_json }}
+    从yaml字符串读取，其结果为yaml类型：
+        {{ some_variable | from_yaml }}
+    强制定义变量：
+        如果变量未定义，则来自ansible和ansible.cfg的默认行为为失败，但可将其关闭。
+            {{ variable | mandatory }}
+    使用未定义的变量：
+        {{ result.cmd|default(5) }}
+            如“result.cmd”为空则为其赋一个默认值“5”；
+        {{ lookup('env','MY_USER')|default('admin',true) }}
+            如指定为“true”则表示为其赋默认值；
+        {{ lookup('env','MY_USER')|default('admin',false) }}
+            如指定为“false”，则表示不为其赋默认值。
+    省略参数：
+        - name: touch files with an optional mode
+          file: dest={{item.path}} state=touch mode={{item.mode|default(omit)}}
+          with_items:
+          - path: /tmp/foo
+          - path: /tmp/bar
+          - path: /tmp/baz
+            mode: "0444"

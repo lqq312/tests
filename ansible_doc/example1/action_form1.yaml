@@ -1,0 +1,25 @@
+---
+- hosts: test-area
+  remote_user: root
+
+  tasks:
+    - name: remove file1
+      file:
+        name: /tmp/file1
+        state: absent
+    - name: remove file2
+      file:
+        name: /tmp/file2
+        state: absent
+    - name: uninstall sl
+      yum:
+        name: sl
+        state: removed
+    - name: uninstall hping3
+      yum:
+        name: hping3
+        state: removed
+    - name: uninstall pv
+      yum:
+        name: pv
+        state: removed

@@ -1,0 +1,36 @@
+Inventory变量参数列表：
+    1、主机连接参数
+        ansible_connection：与主机的连接类型，其值：local、ssh、paramiko，Ansible 1.2之前默认使用paramiko 1.2以后默认使用“smart”，“smart”方式会根据是否支持ControlPersist，来判断“ssh”是否可用。
+
+    2、所有连接
+        ansible_host：定义将要连接的远程主机名，如与你想要设定的主机别名不同的话，可通过此变量设置。
+        ansible_port：定ssh端口号。
+        ansible_user：定义连接ssh的用户名。
+
+    3、ssh连接参数
+        ansible_ssh_pass：定义ssh连接密码，明文显示，可使用--ask-pass或使用SSH私钥进行认证。
+        ansible_ssh_private_key_file：ssh使用的私钥文件，适用于有多个私钥，而又不想使用SSH代理的情况。
+        ansible_ssh_common_args：此设置附加到sftp、scp和ssh缺省命令行。
+        ansible_sftp_extra_args：此设置附加到默认sftp命令行中。
+        ansible_scp_extra_args：此设置附加到默认scp命令行中。
+        ansible_ssh_extra_args：此设置附加到默认ssh命令行中。
+        ansible_ssh_pipelining：确认是否使用SSH管道。这可惟覆盖ansible.cfg中的设置。
+        ansible_ssh_executable：定义ssh可执行文件的路径。
+
+    4、权限提升参数
+        ansible_become：开启提权方式（相当于“ansible_sudo”或“ansible_su”）。
+        ansible_become_method：定义提权方式，一般使用sudo。
+        ansible_become_user：指定提权用户（相当于“ansible_sudo_user”或“ansible_su_user”）。
+        ansible_become_pass：指定提权密码（相当于“ansible_sudo_pass”或“ansible_su_pass”）。
+        ansible_become_exe：指定提权所用的可执行文件（相当于“ansible_sudo_exe”或“ansible_su_exe”）。
+        ansible_become_flags：指定提权命令的参数（相当于“ansible_sudo_flags”或“ansible_su_flags”）。
+
+    5、远程主机环境参数
+        ansible_shell_type：指定目标主机上的shell类型，默认使用“sh”，可根据需要设置为“csh”、“fish”等。
+        ansible_python_interpreter：定义python解释器的路径。
+        ansible_ruby_interpreter：定认ruby解释器的路径。
+        ansible_perl_interpreter：定义perl解释器的路径。
+        ansible_shell_executable：设置ansible控制器将在目标机器上使用的shell，会覆盖ansible.cfg中的配置，默认为“/bin/sh”。
+
+    6、非SSH连接类型参数
+        使用主机特定参数ansible_connection=<connector>，可更改连接类型，其值有“local”、“docker”。

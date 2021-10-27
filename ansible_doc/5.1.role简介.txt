@@ -1,0 +1,47 @@
+roles简介
+
+roles：
+	ansible自1.2版本引入的新特性，用于层次性、结构化地组织playbook。roles能够根据层次结构自动装载变量文件、tasks以及handlers等。要使用roles只需要在playbook中使用include指令即可。简单来讲，roles就是通过分别将变量、文件、任务、模板及处理器放置于单独的目录中，并可以便捷地include它们的一种机制。角色一般用于基于主机构建服务的场景中，但也可以用于构建守护进程等场景中。
+
+	复杂场景：建议使用roles，代码复用度高
+		1、变更指定主机或主机组。
+		2、如命名不规范维护和传承成本大。
+		3、某些功能需多个playbook，通过include即可实现。
+
+角色（roles）：角色集合。
+	roles/
+	├──mysql/
+	├──httpd/
+	├──nginx/
+	└──memcached/
+
+	默认roles的绝对路径为“/etc/ansible/roles”，用户自己使用的roles的目录在其家目录下的.ansible/roles目录，当然roles位于其他路径也可以。
+
+*	注意：使用“# ansible-galaxy init ROLE-NAME”即可初始化完成相应的role的目录结构。
+		ROLE-NAME
+		├── defaults
+		│   └── main.yml
+		├── files
+		├── handlers
+		│   └── main.yml
+		├── meta
+		│   └── main.yml
+		├── README.md
+		├── tasks
+		│   └── main.yml
+		├── templates
+		├── tests
+		│   ├── inventory
+		│   └── test.yml
+		└── vars
+			└── main.yml
+	各目录、文件的引用关系详见pic/roles的引用关系.png
+
+	roles各目录、文件的作用：
+		1、files，存放由copy或script模块等调用的文件；
+		2、templates，存放template模块查找所需要的模板文件的目录；
+		3、tasks，定义task、role的基本元素，至少应该包含一个名为main.yaml的文件；其他的文件需要在此文件中通过include进行包含；
+		4、handlers，至少应该包含一个名为main.yaml的文件；其他的文件需要在此文件中通过include进行包含；
+		5、vars，定义变量，至少应该包含一个名为main.yaml的文件，其他的文件需要在此文件中通过include进行包含；
+		6、meta，定义当前角色的特殊设定及其依赖关系，至少应该包含一个名为main.yaml的文件，其他文件需在此文件中通过include进行包含；
+		7、default，设定默认变量时使用此目录中的main.yaml文件。

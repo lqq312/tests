@@ -1,0 +1,13 @@
+Ansible项目：
+    Ansible Galaxy：
+        https://galaxy.ansible.com
+        用于查找、共享、使用Ansible role的在线社区。
+    Ansible Container：
+        https://github.com/ansible/ansible-container
+        开源项目，旨在实现整个容器构建，部署和管理过程的自动化。
+    Ansible Tower
+        https://www.ansible.com/products/tower
+        商业项目，使用可视化仪表板，基于角色的访问控制，作业调度，集成通知和图形库存管理来集中和控制IT基础架构。
+    Semaphore：
+        https://github.com/ansible-semaphore/semaphore
+        Ansible开源UI项目。

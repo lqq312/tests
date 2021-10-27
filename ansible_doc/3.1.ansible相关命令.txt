@@ -1,0 +1,273 @@
+ansible命令详解：
+    ansible：ansible的命令行参数，实际为软链接，其链接到“/usr/bin/ansible-2.7”文件。
+        ansible <host-pattern> [options]
+            options：
+                -a MODULE_ARGS：指定模块所特有的参数。
+                --ask-vault-pass：提示终端输入vault的密码。
+                -B SECONDS：异步运行失败后多长时间会超时，单位为秒。
+                -C：不会在目标主机上真正运行起来，仅用于测试。
+                -D：当修改文件或模板时用于显示哪些地方被修改了，与“-C”一起使用。
+                -e EXTRA_VARS：用于在命令行中定义变量，在此处定义的变量如与文件中定义的变量重叠则会覆盖文件中的变量。
+                -f FORKS：指定并行执行的线程数，默认为5。
+                -h：显示帮助信息。
+                -i INVENTORY：指定主机清单。
+                -l SUBSET：当指定主机清单后，用于限制仅对哪些主机执行操作。
+                --list-hosts：输出匹配到的主机列表。
+                -m MODULE_NAME：指定要使用的模块名。
+                -M MODULE_PATH：指定自定义的模块路径。
+                -o：将执行的结果在一行内显示。
+                --playbook-dir=BASEDIR：指定playbook的目录，可以在该目录下的文件中定义role、group_vars等信息。
+                -P POLL_INTERVAL：指定异步轮询的间隔时间，与“-B”选项一并使用。
+                --syntax-check：仅对playbook进行语法检测，不会真正执行。
+                -t TREE：将执行的结果输出到该选项指定的目录下，将各主机的执行结果保存在以主机名命名的文本文件中。
+                --vault-id=VAULT_IDS：使用的vault的id。
+                --vault-password-file=VAULT_PASSWORD_FILES：指定vault的密码文件。
+                -v：显示调试信息。
+                --version：显示版本号。
+                -b：使用提权。
+                --become-method=BECOME_METHOD：指定提权方式（即提权命令）。
+                --become-user=BECOME_USER：指定提权用户。
+                -K：提示输入sudo密码。
+                -k：提示输出ssh密码。
+                --private-key=PRIVATE_KEY_FILE：指定私钥文件。
+                -u REMOTE_USER：指定以哪个用户的身份连接远程主机。
+                -c CONNECTION：指定连接类型，默认为“smart”。
+                -T TIMEOUT：指定连接的超时时间。
+                --ssh-common-args=SSH_COMMON_ARGS：指定ssh的选项信息。
+                --sftp-extra-args=SFTP_EXTRA_ARGS：指定sftp的额外选项信息。
+                --scp-extra-args=SCP_EXTRA_ARGS：指定scp的额外选项信息。
+                --ssh-extra-args=SSH_EXTRA_ARGS：指定ssh的额外选项。
+
+        ansible命令执行过程：
+            1、加载自己的配置文件，默认为/etc/ansible/ansible.cfg；
+            2、加载自己对应的模块文件，如command；
+            3、通过ansible将模块或命令生成对应的临时py文件，并将该文件传输至远程主机上的～/.ansible/tmp/ansible-tmp-XXX/XXX.py文件；
+            4、给文件可执行权限；
+            5、执行文件并返加结果；
+            6、删除临时py文件，sleep 0后退出。
+
+        执行后状态：
+            1、绿色：执行成功并且不需要做出改变的操作；
+            2、黄色：执行成功并且对目标主机做了变更；
+            3、红色：执行失败。 
+
+    ansible-console：让用户可以在ansible-console虚拟出来的终端上像Shell一样使用Ansible内置的各种命令。
+        ansible-console [<host-pattern>] [options]
+            options：该命令的选项与ansible的选项基本一致，不同的选项则单独列出。
+                --step：每执行一个task前均会向用户询问是否执行。
+
+        注意：该命令在交互式模式下可通过“?”获取帮助信息。
+
+    ansible-doc：用于查看ansible默认模块的帮助信息。
+        ansible-doc [-l|-F|-s] [options] [-t <plugin type> ] [plugin]
+            options：
+                -a：显示所有模块的文档。
+                -h：查看ansible-doc命令的帮助信息。
+                -j：以json格式列出所有模块的简要信息。
+                -l：列出可用的插件。
+                -F：显示模块名及其对应的源文件的绝对路径。
+                -M：指定额外模块的路径。
+                -s：显示指定模块的playbook片段。
+                -t：指定要显示哪些类型的插件，可用类型为“become”，“cache”,
+          “callback”， “cliconf”，“connection”，“httpapi”，“inventory”，“lookup”，“shell”，“module”, “strategy”，“vars”；该选项需要与“-l”一并使用。
+                -v：显示详细信息，“v”越多，显示的信息越详细。
+                --version：显示版本信息。
+
+        注意：选项中的“-l”、“-F”和“-s”不能同时使用。
+
+    ansible-galaxy：用于连接https://galaxy.ansible.com以下载roles供本地使用（https://docs.ansible.com/ansible/2.5/reference_appendices/galaxy.html?highlight=ansible%20galaxy#remove-an-installed-role）。
+        ansible-galaxy [delete|import|info|init|install|list|login|remove|search|setup] [--help] [options]
+            options：
+                -h：显示帮助信息。
+                -c：忽略SSL认证的错误信息。
+                -s：指定目标API服务器的地址。
+                -v：显示详细信息。
+                -vv：显示更详细的信息。
+                --version：显示版本信息。
+        ansible-galaxy <command> --help
+            command：
+                delete：在通过login进行身份验证后，可以删除Galaxy网站是的role，但只能在GitHub中删除有权访问的repo中的role。
+                    ansible-galaxy delete [options] github_user github_repo
+                        options：可用选项与ansible-galaxy中的选项一致。
+                import：通过login进行身份验证后，可以导入拥有可已经授权访问的GitHub中的repo的role。
+                    ansible-galaxy import [options] github_user github_repo
+                        options：大部分选项与ansible-galaxy中选项一致，新增选项如下。
+                            --branch：指定导入的分支，默认为repo的默认分支，一般为master。
+                            --no-wait：使用该选项不会等待结果，可以在Galaxy网站上访问My Imports来获取任何角色的最新导入结果。
+                            --role-name：默认情况下为role指定的名称将从GitHub的repo名称派生，使用该选项可以为覆盖其默认的名称。
+                            --status：检查给定的github_user/github_repo的最新导入请求的状态。
+                info：用于查看指定role的更多详细信息。
+                    ansible-galaxy info [options] role_name[,version]
+                        options：大部分选项与ansible-galaxy中选项一致，新增选项如下。
+                            --offline：创建role时不查询galaxy的API。
+                            -p ROLES_PATH：指定包含role的目录路径。默认在ansible.cfg的roles_path中指定。
+                init：该命令可初始化新role的基本结构，节省创建role所需的各种目录和main.yml文件的时间。
+                    Initialize new role with the base structure of a role.
+                        options：
+                            -f：强制覆盖已存在的role。
+                            --init-path：指定创建的role的路径，如不指定则默认为当前工作目录。
+                            --offline：创建role时不查询galaxy的API。
+                            --role-skeleton：指定新的role应基于哪个role框架的路径。
+                            --type：指定role的类型进行初始化，可用的包类型包括“container”、“apb”和“network”。
+                install：使用ansible-galaxy从Galaxy网站下载role。
+                    ansible-galaxy install [options] [-r FILE | role_name(s)[,version] | scm+role_repo_url[,version] | tar_file(s)]
+                        options：
+                            -f：强制覆盖已存在的role。
+                            --force-with-deps：强制覆盖已有的role及其依赖项。
+                            -i：忽略错误并继续下一个指定的role。
+                            -g：打包role时，使用tar而非scm的归档选项。
+                            -n：不下载作为依赖项列出的role。
+                            -r：包含要导入的role列表的文件。
+                            -p：指定包含role的目录的路径，默认为ansible.cfg中roles_path所指定的路径。
+                list：使用list命令显示roles_path中安装的每个role的名称和版本。
+                    ansible-galaxy list [role_name]
+                login：用于登陆Galaxy网站，在使用“import”、“delete”和“setup”命令前都需要使用该命令进行认证。
+                    ansible-galaxy login [options]
+                        options：
+                            --github-token：使用GitHub的令牌认证而非用户名和密码进行认证。
+                remove：从“role_path”所定义的目录下删除指定的role。
+                    ansible-galaxy remove [options] role1 role2 ...
+                        options：
+                            -p：指定包含role的目录的路径，默认为ansible.cfg中roles_path所指定的路径。
+                search：按tag、platforms和author等多个关键字搜索Galaxy数据库。
+                    ansible-galaxy search [options] [searchterm1 searchterm2] [--galaxy-tags galaxy_tag1,galaxy_tag2] [--platforms platform2,platform2] [--author username]
+                        options：
+                            --author：指定GitHub的用户名。
+                            --galaxy-tags：指定要过滤的galaxy标签列表。
+                            --platforms：指定筛选的操作系统平台列表。
+                            -p：指定包含role的目录的路径，默认为ansible.cfg中roles_path所指定的路径。
+                setup：管理Galaxy与给定源之间的集成。
+                    ansible-galaxy setup [options] source github_user github_repo secret
+                        options：
+                            --list：列出所有集成。
+                            --remove：删除与提供的ID值匹配的集成；使用“--list”查看ID值。
+
+    ansible-playbook：在指定的目标主机上执行已定义的task。
+        ansible-playbook [options] playbook.yml [playbook2 ...]
+            options：该选项与“ansible”命令相同，不同的选项如下。
+                --flush-cache：在每个主机上执行时都会刷新fact的缓存。
+                --force-handlers：当被依赖的task执行失败，handlers也会被执行。
+                --list-tags：列出可用的tag。
+                --list-tasks：列出可能会被执行的所有task。
+                --skip-tags：被指定的tags将不会被执行。
+                --start-at-task：仅执行指定task中的playbook。
+                --step：每执行一步都会询问是否需要继续执行。
+                -t：只运行被标记为指定值的play和task。
+
+    ansible-pull：从VCS的repo上拉取playbook，然后在本地执行。
+        ansible-pull -U <repository> [options] [<playbook.yml>]
+            options：
+                --accept-host-key：如果没有添加，则为repo url添加hostkey。
+                --ask-vault-pass：要求输入vault的密码。
+                --check：不做任何改变，尝试预测可能发生的一些变化。
+                -C：切换到指定的分支/tag/commit下；默认为存储库模块的行为。
+                --clean：清除工作repo中的已被修改的文件。
+                --diff：在更改文件或模板时，显示这些文件修改前后的差异，建议与“--check”一并使用。
+                -d：将目录切换到指定repo下。
+                -e：设置额外的变量，使用“key=value”、YAML或JSON格式，如通过文件的方式设置变量则在文件前加上“@”。
+                -f：即使无法更新repo，也要运行playbook
+                --full：做一个完整的clone，而不是浅clone。
+                -i：指定一个主机清单文件路径或使用“,”分隔的主机列表。
+                -l：使用正则表达式进一步限制被操作的主机。
+                --list-hosts：仅显示被匹配到的主机列表而不执行任何其他操作。
+                -m：指定repo模块名，ansible将用于检出到指定repo，一般使用“git”、“subversion”、“hg”或“bzr”，默认为“git”。
+                -M：将冒号分隔的路径预先添加到模块库（默认模块路路径为~/.ansible/plugins/modules:/usr/share/ansible/plugins/modules）。
+                -o：仅运行更新过的repo中的playbook。
+                --purge：在playbook运行后清除checkout。
+                --skip-tags：跳过指定的play和task。
+                -s：在开始之前以随机间隔（在0～n秒之间）休眠。这是分散git请求的有效办法。
+                -t：仅运行被打上tag的play和task。
+                --track-subs：子模块将跟踪最新的更改。这相当于为git子模块更新指定了“--remote”。
+                -U：指定playbook的repo的URL。
+                --vault-id：指定要使用的vault的id。
+                --vault-password-file：指定要使用的vault的密码文件。
+                -v：显示详细信息。
+                --verify-commit：验证checkout的GPG签名，如果失败则中止运行playbook，这需要相应的VCS模块来支持这种操作。
+                --version：显示版本信息。
+                -k：询部连接密码，一般为ssh密码。
+                --private-key：指定连接认证的私钥文件。
+                -u：指定远程主机的用户名。
+                -c：指定连接类型，一般为“smart”。
+                -T：指定连接的超时时间。
+                --ssh-common-args：指定传递给“sftp”、“scp”或“ssh”的公共参数。
+                --sftp-extra-args：指定仅传递给“sftp”的参数。
+                --scp-extra-args：指定仅传递给“scp”的参数。
+                --ssh-extra-args：指定仅传递给“ssh”的参数。
+                -K：询问提权密码。
+
+    ansible-config：查看、编辑或管理ansible的配置。
+        ansible-config [dump|list|view] [--help] [options] [ansible.cfg]
+            options：
+                -c：指定配置文件的路径，默认为优先级列表中第一个找到的文件。
+                -h：显示帮助信息。
+                -v：显示详细信息，一般用于debug。
+                --version：显示版本信息。
+
+    ansible-inventory：显示Ansible清单信息，默认使用JSON格式显示。
+        ansible-inventory [options] [host|group]
+            options：
+                --ask-vault-pass：询问vault的密码。
+                --export：与“--list”一起执行时，以一种针对导出进行优化的方式表示，而不是作为Ansible如何处理它的准确表示。
+                -h：显示帮助信息。
+                -i：指定主机清单文件路径，或以“,”间隔的主机列表。
+                --output：与“--list”一起执行时，将主机清单导出至文件中。
+                --playbook-dir：由于此工具不使用playbooks，因此将其用作替代playbook目录。这为许多功能设置了相对路径，包括roles/group_vars等。
+                --toml：使用“TOML”格式显示而非“JSON”，会忽略使用的“--graph”选项。
+                --vars：除非使用了“--graph”选项，否则将“vars”添加到图形显示中。
+                --vault-id：指定使用的vault的id。
+                --vault-password-file：指定要使用的vault的密码文件。
+                -v：显示详细信息，一般用于debug。
+                --version：显示版本信息。
+                -y：使用“YAML”格式显示，此时会忽略“--graph”选项。
+                --list：输出所有主机信息作为清单脚本。
+                --host：输出特定主机信息作为清单脚本。
+                --graph：以文本图形化显示
+
+    ansible-vault：加密或解密Ansible的数据文件。
+        ansible-vault [create|decrypt|edit|encrypt|encrypt_string|rekey|view] [options] [vaultfile.yml]
+            options：
+                --ask-vault-pass：询问vault的密码。
+                -h：显示帮助信息。
+                --new-vault-id：为vault id重新设置密钥。
+                --new-vault-password-file：为vault密码文件重设密钥。
+                --vault-id：指定要使用的vault的id。
+                -v：显示详细信息，一般用于debug。
+                --version：显示版本信息。
+            command：
+                create：在编辑器中创建并找开一个文件，该文件将在关闭时使用提供的密码进行加密。
+                    ansible-vault create [options] file_name
+                        options：
+                            --encrypt-vault-id：指定用于加密的vault id。
+                            --vault-password-file：指定一个vault密码文件。
+                decrypt：使用提供的密码解密指定的文件。
+                    ansible-vault decrypt [options] file_name
+                        options：
+                            --output：输出加密或解密的文件名；使用“-”则用于标准输出。
+                edit：在编辑器中打开并解密现有的存储文件，并闭后将再次加密。
+                    ansible-vault edit [options] file_name
+                        options：
+                            --encrypt-vault-id：指定用于加密的vault id。
+                encrypt：使用提供的密码加密指定的文件。
+                    ansible-vault encrypt [options] file_name
+                        options：
+                            --encrypt-vault-id：指定用于加密的vault id。
+                            --output：输出加密或解密的文件名；使用“-”则用于标准输出。
+                            --vault-password-file：指定一个vault密码文件。
+                encrypt_string：使用提供的vault密码加密字符串。
+                    ansible-vault encrypt_string [--prompt] [options] string_to_encrypt
+                        options：
+                            --encrypt-vault-id：指定用于加密的vault id。
+                            -n：指定变量名。
+                            --output：输出加密或解密的文件名；使用“-”则用于标准输出。
+                            -p：提示字符串加密。
+                            --stdin-name：在标准输入中指定一个变量名。
+                            --vault-password-file：指定一个vault密码文件。
+                rekey：使用新密码重新加密存储文件，但必需先输入原有的密码。
+                    ansible-vault rekey [options] file_name
+                        options：
+                            --encrypt-vault-id：指定用于加密的vault id。
+                            --vault-password-file：指定一个vault密码文件。
+                view：使用现有的vault密码打开、解密或查看已存在的vault文件。
+                    ansible-vault view [options] file_name
+                        options：
+                            --vault-password-file：指定一个vault密码文件。

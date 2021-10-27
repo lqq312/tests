@@ -1,0 +1,12 @@
+---
+- hosts: test-area
+  remote_user: root
+  vars:
+    ports:
+      - listen_port: 81
+      - listen_port: 82
+      - listen_port: 83
+
+  tasks:
+    - name: copy nginx config file
+      template: src=for2.j2 dest=/tmp/for2.conf

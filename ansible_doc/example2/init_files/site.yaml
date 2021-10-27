@@ -1,0 +1,42 @@
+---
+- hosts: test1
+  remote_user: root
+  vars:
+    - pub_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSq84sZMI6emf6seuWPvauznCR598f6SNi3q9yuefvcuh6XZ9EQlvZJdYHU10PJH6S6asMYnEWfHwPfUIbJX5jkT5nhxBYBDlgE1/8Jc+eWkpr6Qx4H9gAiXTo6O7Nv8fV6keu41SKQBo0qh8XFz9JsZO2alskvFV7ZCeNMSvKjuzGzJLa/mphX8S1ey9x6rbSq6svF48jCrnnS2CLn2KyGm/aLLwUu0LePOjOAq4RsJaYv2bDrC6NpJQMmuwmGfCuL4TfunnBzgJhm8gU88HlmJIrIWkUhDxFdNeW25iyxmzpQYq/NZQcqRQ5IeI8hiKIBjq5HFaaU9XVa+4651Hh root@control0.example.local'
+
+  tasks:
+    - name: archive all default yum repo file
+      archive: path=/etc/yum.repos.d/* dest=/etc/yum.repos.d/default_repo.tar.gz remove=yes format=gz
+    - name: Download the files required by the system
+      get_url: url={{ item.url }} dest={{ item.dest }} force=yes
+      with_items:
+        - { url: 'http://local-yum.example.local/require_files/local_yum.repo', dest: '/etc/yum.repos.d/local_yum.repo' }
+        - { url: 'http://local-yum.example.local/require_files/vimrc', dest: '/root/.vimrc' }
+    - name: install require software
+      yum: name={{ item }} state=latest
+      with_items:
+        - vim-enhanced
+        - net-tools
+        - wget
+        - bash-completion
+        - chrony
+    - name: set selinux disabled
+      selinux: state=disabled
+    - name: set firewalld stop and disabled
+      service: name=firewalld state=stopped enabled=no
+    - name: modify default chronyd config file
+      template: src=local_ntp_config dest=/etc/chrony.conf force=yes
+      notify: set chronyd restart
+    - name: set chronyd started and set enabled
+      service: name=chronyd state=started enabled=yes
+    - name: set command completion
+      lineinfile: path=/etc/profile line='        . /usr/share/bash-completion/completions/*' insertafter='completion$'
+      notify: apply command completion
+    - name: add control server pub key
+      lineinfile: path=/root/.ssh/authorized_keys line={{ pub_key }} create=yes
+
+  handlers:
+    - name: set chronyd restart
+      service: name=chronyd state=restarted
+    - name: apply command completion
+      shell: source /etc/profile.d/bash_completion.sh

@@ -1,0 +1,28 @@
+---
+- hosts: test-area
+  remote_user: root
+  
+  tasks:
+    - name: stopped firewalld service
+      service: name=firewalld state=stopped enabled=no
+    - name: install nginx
+      yum: name=nginx state=present
+    - name: remove default html page
+      file: name={{ item }} state=absent
+      with_items:
+        - /usr/share/nginx/html/index.html
+        - /usr/share/nginx/html/404.html
+        - /usr/share/nginx/html/50x.html
+        - /usr/share/nginx/html/nginx-logo.png
+        - /usr/share/nginx/html/poweredby.png
+    - name: copy config file
+      copy: src=/tmp/nginx.conf dest=/etc/nginx/nginx.conf
+      notify: restart nginx service
+    - name: copy test html page
+      copy: src=/tmp/t1.html dest=/usr/share/nginx/html/index.html
+    - name: set nginx started
+      service: name=nginx state=started enabled=yes
+  
+  handlers:
+    - name: restart nginx service
+      service: name=nginx state=restarted

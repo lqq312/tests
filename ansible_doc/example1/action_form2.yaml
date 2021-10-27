@@ -1,0 +1,16 @@
+---
+- hosts: test-area
+  remote_user: root
+
+  tasks:
+    - name: create new file
+      file: name={{ item }} state=touch
+      with_items:
+        - /tmp/file1
+        - /tmp/file2
+    - name: install require software
+      yum: name={{ item }} state=installed
+      with_items:
+        - sl
+        - hping3
+        - pv

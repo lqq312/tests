@@ -1,0 +1,6 @@
+role学习站点：
+    https://galaxy.ansible.com
+    https://github.com/ansible/ansible-examples
+    https://github.com/kuailemy123/Ansible-roles
+    https://github.com/geerlingguy
+    https://github.com/debops

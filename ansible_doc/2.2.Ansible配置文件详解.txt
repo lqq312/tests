@@ -1,0 +1,145 @@
+Ansible配置文件详解：
+    
+    配置文件读取顺序：
+        当前命令执行目录——>用户家目录下的.ansible.cfg——>/etc/ansible.cfg
+
+[defaults]：定义常规连接类配置，以下的相关配置均属于defaults配置块。
+    inventory：存放可通信主机的文件。
+    library：定义的库文件的目录。
+    module_utils：模块共用的工具。
+    remote_tmp：远端主机的临时目录，在被控制主机上；Ansible通过远程传输模块到远程主机,然后远程执行,执行后在清理现场。
+    local_tmp：本机的临时目录，在控制主机上，所有需要对远程主机执行的操作都会先在本地生成对应的python脚本，然后发送至远程主机的“remote_tmp”目录下，在命令执行完成后再删除对应的脚本。
+    plugin_filters_cfg：过滤不使用的插件的配置文件。
+    forks：指定ansible并行操作的远程主机数量（4Cores 8GB的服务器建议最多并发20个线程）。
+    poll_interval：在异步任务中，多长时间回查一下这些任务的状态。
+    sudo_user：定义sudo使用的默认用户，当ansible只有远程主机的普通用户权，而某些操作需要特殊权限时，则使用此处定义的sudo_user来操作这些特权使令，一般指定为“root”。 
+    ask_sudo_pass：在执行Ansible时如使用sudo则是否询问sudo密码，默认为no。
+    ask_pass：每次执行Ansible时是否询问ssh密码，默认为no。
+    transport：指定默认通信机制，默认为smart。
+    remote_port：指定被控端主机ssh端口，默认为22号端口。
+    module_lang：指定模块和系统之间通信的计算机语言,默认为C语言。
+    module_set_locale：用于定义module_lang是否开启。
+    gathering：设置默认facts（远程系统变量）收集，默认值为“implicit”即每一次play，facts都会被收集，除非设置“gather_facts:False”；“explicit”则正好相反，facts不会被收集，直到play中需要；“smart”则表示没有facts的新hosts将不会被扫描，但如果同一主机，在不同plays中被记录地址，在playbook运行中将不会通信。
+    gather_subset：定义获取fact的子集，默认全部。
+    gather_timeout：定义收集fact的超时时间。
+    roles_path：指定playbook搜索Ansible roles的目录；多个路径以冒号分隔。
+    host_key_checking：第一次连接被控主机时是否检测被控主机的指纹信息，False表示不检查（则不提示验证被控主机的指纹信息），建议设置为“False”。
+    stdout_callback：定义是否忽略执行Ansible时的回调信息。
+    error_on_missing_handler
+    sudo_exe：如需使用sudo的方式执行特权命令，则使用哪个命令来执行sudo。
+    sudo_flags：当启用sudo_exe时，定义传递给sudo_exe的命令的参数。
+    timeout：定义SSH连接的超时时间。
+    log_path：定义日志文件的路径（建议开启）。
+    module_name：指定执行ansible是-m选项的默认模块，默认定义使用command模块。
+    executable：该选项用于指定在sudo环境下使用命令的脚本解释器，默认为“/bin/sh”。
+    hash_behaviour：如果变量重叠，优先级更高的一个是替换优先级低的还是合并在一起，默认为“replace”。
+    private_role_vars：默认情况下role的变量将在全局范围内可见，为防止这种情况，将该参数定义为“yes”会使用只有tasks的任务和handlers的任务才可以看到role的变量。
+    jinja2_extensions：开发者中心特性，定义允许开启的jinja2的拓展模块，多个模块以“,”分隔。
+    private_key_file：如使用CA公钥认证而不是SSH客户端密钥认证，则可以使用该选项来定义CA私钥的路径从而避免每次提醒设置“--ansible-private-keyfile”。
+    vault_password_file：指定密码文件，也可在命令行中使用“--vault-password-file”定义，如此处定义的是脚本而非文本文件则需确定该脚本可执行并可在标准输上打印出来，如脚本是交互式提示请求数据，请求将会发到标准错误输出中（详情参照http://www.ansible.com.cn/docs/playbooks_vault.html）。
+    ansible_managed：Ansible_managed是通过“{ ansible_managed }”定义的字符串，可以插入到Ansible配置模版系统生成的文件中，默认设置则表示哪个用户在哪个主机上什么时间修改了什么文件。
+    display_skipped_hosts：如设置为“False”则Ansible不会显示任何跳过任务的状态，默认选项是显示跳过任务的状态。
+    display_args_to_stdout：
+    error_on_undefined_vars：如引用的变量名称错误的话，是否让ansible在执行步骤上失败。
+    system_warnings：如指定为“False”则表示关闭Ansible运行时系统的提示信息。
+    deprecation_warnings：如指定为“True”则表示在ansible-playbook输出结果中禁用“不建议使用”的警告。
+    command_warnings：从Ansible 1.8开始，当shell和命令行模块被默认模块简化时，Ansible将默认发出警告（这个包含提醒使用“git”但不是通过命令行执行，使用模块调用比冒然使用命令行调用可以使playbook工作更具一致性也更可靠也更便于维护）；也可在命令行末尾添加“warn=yes”或“warn=no”来控制是否开启警告提示。 
+    action_plugins：action模块的存放路径，多个路径以冒号间隔。
+    become_plugins：
+    cache_plugins
+    callback_plugins：在特殊事件是将被调用，允许触发通知；这是一个以开发者为中心的特性,可以实现对Ansible的底层拓展。
+    connection_plugins：连接插件，用于扩展Ansible通讯信道，用于传输命令或文件。
+    lookup_plugins
+    inventory_plugins
+    vars_plugins
+    filter_plugins：过滤器是一种特殊的函数，用于拓展模板系统。
+    test_plugins
+    terminal_plugins
+    strategy_plugins
+    strategy
+    bin_ansible_callbacks：用于控制callback插件在运行ansible是被加载，这个模块将用于命令行的日志系统，发出通知等特性，callback插件如果存在将会永久性的被/usr/bin/ansible-playbook加载，不能被禁用。
+    nocows：
+    cow_selection
+    cow_whitelis
+    nocolor：默认ansible会为输出结果加上颜色，用来更好的区分状态信息和失败信息，如将其设置为“1”则表示并闭该功能，启用则设置为“0”。
+    fact_caching：fact值默认存储在内存中，例如：可以设置存储在redis中，用于持久化存储。
+    fact_caching_connection：当使用redis存储fact值时，通过该选项指定redis的接口，格式为“fact_caching_connection”，如“fact_caching_connection”。
+    retry_files_enabled：当playbook执行失败的情况下，将会创建一个重试文件，默认该功能关闭，创建的重试文件以“.retry”结尾。
+    retry_files_save_path：当“retry_files_enabled”开启时，指定重试文件存放路径。
+    squash_actions：指定针对哪些action时跳过循环，一次性执行。
+    no_log：任务数据的日志记录，默认为“False”即开启。
+    no_target_syslog：定义任务的日志记录在目标主机的系统日志中，数据仍然记录在控制器上，“False”表示记录，“True”表示记录。
+    allow_world_readable_tmpfiles：在目标机器上创建临时目录，如创建失败是否显示为失败。
+    var_compression_level：控制发送到工作进程的变量的压缩级别，默认值为0，不使用压缩；此值必须是从0到9的整数。
+    module_compression：指定模块的压缩方法，默认使用zlib压缩，可以通过ansible_module_compression来为每个主机设置。
+    max_diff_size：指定使用“diff”对比文件时能比对的最大文件大小，设置0则为无限制（可能对内存有影响）。
+    merge_multiple_cli_flags：定义是否合并命令行的参数信息，例如：“--option1 var1 --option1 var2 --option3 var3 可合并为 --option1 var1 var2 var3”。
+    show_custom_stats：是否通过set_stats指定的插件将自定义的统计信息输出到指定路径。
+    inventory_ignore_extensions：当前用户的家目录作为主机清单时，以哪些字符串结尾的文件需要被忽略，多个类型以“,”间隔。
+    network_group_modules
+    allow_unsafe_lookups：定义是否允许查找插件。
+    any_errors_fatal：当有其中一个任务失败时是否立即停止，“True”表示停止，“False”表示跳过。
+
+[inventory]：定义主机清单相关配置。
+    enable_plugins：定义主机清单使用的扩展插件，其顺序也定义的主机清单读取顺序。
+    ignore_extensions：如果将目录作为主机清单时，以哪些字符串结尾的文件会被忽略执行。
+    ignore_patterns：将目录作为主机清单时，匹配上正则表达式的文件将会被忽略执行。
+    unparsed_is_failed：其值为“True”则表示未分组的主机则会报错，默认为“False”。
+
+[privilege_escalation]：定义提权的配置。
+    become：定义是否开启提权。
+    become_method：定义提权方式。
+    become_user：定义提权的用户。
+    become_ask_pass：定义提权时如需使用密码是否提示。
+
+[paramiko_connection]：定义paramiko的连接方式，不常用。
+    record_host_keys：定义是否记录“host key”。
+    pty：定义是否使用pty。
+    look_for_keys：paramiko在尝试使用SSH连接远程主机时是否查找主机密钥。
+    host_key_auto_add：如果host key要控制端主机不存在是否自动添加，默认为“True”。
+
+[ssh_connection]：定义SSH连接属性。
+    ssh_args：定义ssh连接参数，如使用跳板机进行远程管理则需要在此处定义参数。
+    control_path_dir：定义ssh控制目录的路径。
+    control_path：ssh进行control socket存储的路径。
+    pipelining：定义管道是否开启，管道开启后连接不会断开，对该主机的后续操作均会在这一个管道中执行，效率高。
+    scp_if_ssh：定义通过ssh进行文件传输的方式，其值为“True”表示使仅使用“scp”，其值为“False”表示仅使用“sftp”，其值为“smart”则表示先尝试使用“sftp”，如不能成功则使用“scp”，默认为“smart”。
+    transfer_method：定义传输模式，“sftp”表示使用sftp传输文件，“scp”表示使用scp传输文件，“piped”表示使用在SSH之上使用“dd”传输文件，“smart”表示依次尝试“sftp”、“scp”、“piped”的传输方式。
+    sftp_batch_mode：其值为“False”表示在sftp进行文件传输时不使用批处理的方式
+    usetty：定义是不中使用tty终端。
+    retries：定义ssh连接失败后的重试次数。
+
+[persistent_connection]
+    connect_timeout：连接空闲超时时间。
+    command_timeout：命令执行时的超时时间。
+
+[accelerate]：加速模块。
+    accelerate_port：定义加速模块的端口。
+    accelerate_timeout：命令执行超时时间，单位为秒。
+    accelerate_connect_timeout：连接超时时间。
+    accelerate_multi_key
+
+[selinux]：关于selinux的相关配置。
+    special_context_filesystems：对哪些文件系统需要使用SELinux进行物殊处理。
+    libvirt_lxc_noseclabel：是否将变量“noseclabel”传递给“libvirt_lxc”以使得“libvirt_lxc”在SELinux下运行，默认为“yes”。
+
+[colors]：定义回调信息的颜色信息。
+    highlight
+    verbose
+    warn
+    error
+    debug
+    deprecate
+    skip
+    unreachable
+    ok
+    changed
+    diff_add
+    diff_remove
+    diff_lines
+
+[diff]：定义diff相前参数。
+    always：定义是否每次都进行比对。
+    context：显示几行上下文。
+
+已加载的配置可通过“ansible-config dump”进行查看。

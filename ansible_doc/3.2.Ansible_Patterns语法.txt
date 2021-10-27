@@ -1,0 +1,48 @@
+Ansible Patterns匹配：
+    1、匹配所有主机
+        all
+        "*"
+
+    2、精确匹配
+        192.168.50.190
+        test0.example.local
+
+    3、或匹配
+        "web:db"
+            表示在web组或db组中的主机。
+
+    4、非匹配
+        'web:!db'
+            表示在web组且不在db组中的主机（注意：此处使用单引号）。
+
+    5、交集匹配
+        "web:&db"
+            表示同时在web组且在db组中的主机。
+
+    6、通配符匹配
+        "*.com"
+            以“.com”结尾的所有主机。
+        "web-*.com:dbserver"
+            以“web-”开头，以“.com”结尾或在dbserver组中的所有主机。
+        "webserver[0]"
+            webserver组列表中的第一个主机。
+        "webserver[0:25]"
+            webserver组列表是的第一个至二十五个主机。
+
+    7、正则表达式匹配
+        "~(web|db).*\.example\.com"
+            表示能被该正则表达式匹配到的所有主机（使用正则表式需要以“~”开头）。
+
+    8、组合匹配
+        'webservers:dbservers:&staging:\!phoenix'
+        'webservers:!{{excluded}}:&{{required}}'
+
+    9、排除条件
+        ansible-playbook site.yml -l 192.168.50.190
+        ansible-playbook site.yml -l @retry_hosts.txt
+
+    10、不指定主机文件
+        ansible all -i 192.168.50.191，
+            仅对指定主机执行操作（注意：主机后以“,”结尾）。
+
+    注意：有正则表达式或逻辑匹配中有些符号有特殊含义，建议在Pattern中使用单引号，可避免使用转义符。

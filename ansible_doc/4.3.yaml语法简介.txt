@@ -1,0 +1,97 @@
+yaml语法：
+    YAML语言的高计目标，就是方便从类读写。它实质上是一种通用的数据串行化格式。
+
+    Playbooks采用YAML语法结构，基本的YAML语法可参考http://docs.ansible.com/YAMLSyntax.html
+
+    python利用pyyaml模块进行解析yaml语言可参照http://pyyaml.org/wiki/PyYAMLDocumentation
+
+    yaml格式在线检查可参考http://yaml-online-parser.appspot.com/
+
+它的基本语法规则：
+    1、大小写敏感。
+    2、使用缩进表示层级关系。
+    3、缩进时不允许使用Tab键，只允许使用空格。
+    4、缩进的空格数目不重要，同样的缩进代表同样的级别，只要相同层级的元素左侧对齐即可。
+    5、yaml文件以“---”作为文档的开始且需要顶行首写，以“...”作为文档的结束。
+    6、“#”表示注释，从这个字符一直到行尾，都会被解析器所忽略。
+    7、一个完整的代码块功能需最少元素，需包括“name: task”，并且一个“name”中只能有一个“task”。
+
+YAML支持的数据结构有三种：
+    1、对象：键值的集合，又称为映射（mapping）/哈希（hashes）/字典（dictionary）。
+    2、数组：一组按次序排列的值，又称为序列（sequence）/列表（list）
+    3、纯量（scalars）：单个的、不可再分的值。
+
+YAML语法示例：
+    1、对象：键值一般使用冒号表示。
+        job: Developer
+    2、数组：
+        ---
+        fruits：
+        - Apple
+        - Orange
+        - Strawberry
+        - Mango
+        
+        如转换为Python格式：
+            {'fruits:'['Apple','Orange','Strawberry','Mango']}
+        
+        也可以使用行内表示法：
+            ---
+            fruits: ['Apple','Orange','Strawberry','Mango']
+    3、字典：
+        ---
+        martin:
+          name: Martin D'vloper
+          job: Developer
+          skill: Elite
+
+        转换为python格式：
+            {'martin':{'name':"Martin D'vloper",'job':'Developer','skill':'Elite'}}
+
+        也可以使用行内表示法：
+            ---
+            martin: {name: Martin D'vloper, job: Developer, skill: Elite}
+
+    4、纯量：
+        数值：
+            number: 12
+            float: 12.30
+
+        布尔值：
+            表示true的值：true、True、TRUE、yes、Yes、YES、on、On、ON、y、Y
+            表示false的值：false、False、FALSE、no、No、off、Off、OFF、n、N
+
+        字符串：字符串默认不使用引号表示
+            str: 这是一行字符串
+            str: '内容: 字符串'
+            str: 'labor''s day'
+            s2: "内容\n字符串"、
+            e: !!str 123
+                !!str表示将123强制转换为字符型
+
+        多行字符串：
+            str: 这是一段
+              多行
+              字符串
+
+            this: |
+              Foo
+              Bar
+            that: >
+              Foo
+              Bar
+            s2: |+
+              Foo
+              表示保留文字块末尾换行
+            s3: |-
+              Foo
+              表示不保留文字块末尾换行
+        引用：锚点“&”和别名“*”，可以用来引用。
+            - &showell Steve
+            - Clark
+            - *showell
+            使用“&”在此处定义一个锚点，并为该锚点命各为“showell”，其值为Steve，在其他位置使用“*showell”则表示在其位置引用“Steve”
+
+        引用变量：
+            foo: "{{ variable }}"
+            foo: "{{ variable }}/additional/string/literal"

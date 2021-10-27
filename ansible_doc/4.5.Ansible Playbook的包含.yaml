@@ -1,0 +1,33 @@
+Ansible Playbook包含
+
+静态包含：
+    使用import_tasks模块来包含task文件
+    使用import_role模块来包含role
+
+    - import_tasks: tasks/foo.yml
+    - import_tasks: wordpress.yml wp_user=timmy
+    - import_tasks: wordpress.yml
+      vars:
+        wp_user: timmy
+        ssh_keys:
+          - keys/one.txt
+          - keys/two.txt
+
+变量包含：
+    include_vars在task中动态加载yaml或json文件类型中的变量
+
+    - include_vars: myvars.yml
+
+动态包含：
+    使用include_tasks模块来包含task文件
+    使用include_role模块来包含role
+
+    循环引用3次
+        - include_tasks: foo.yml param={{item}}
+          with_items:
+          - 1
+          - 2
+          - 3
+
+    还可以使用动态变量引入task文件
+        - include_tasks: "{{inventory_hostname}}.yml"

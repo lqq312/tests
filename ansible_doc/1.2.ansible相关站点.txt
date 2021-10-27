@@ -1,0 +1,14 @@
+源码：
+    https://github.com/ansible/ansible
+官方文档：
+    http://docs.ansible.com
+电子书：
+    https://www.ansible.com/resources/ebooks
+白皮书：
+    https://www.ansible.com/resources/whitepapers
+用户案例：
+    https://www.ansible.com/resources/case-studies
+jinja2中文文档：
+    http://docs.jinkan.org/docs/jinja2/
+yaml语法：
+    http://www.yaml.org

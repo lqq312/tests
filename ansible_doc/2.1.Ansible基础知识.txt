@@ -1,0 +1,42 @@
+Ansible节点要求：
+    1、对管理主机的要求：
+        i、目前，只要机器上安装了Python2（版本2.6或2.7）或Python3（版本3.5及更高版本）都可以运行Ansible（windows系统不可以做管理主机）。
+        ii、管理主机的系统可以是RedHat、Debian、CentOS、OS X、BSD的各种版本。
+    2、对节点主机的要求：
+        i、通常我们使用ssh与节点通信，默认使用sftp的方式，如果sftp不可用，可在ansible.cfg配置文件中配置成scp的方式。在节点上也需要安装Python2（2.6或更高版本）或Python3（3.5或更高版本）。
+
+
+Ansible安装方法：
+    1、yum安装
+        略
+
+    2、Pip安装
+        # yum -y install python-setuptools
+        # easy_install pip
+        # pip install ansible
+        # ansible --version
+            （查看ansible的相关信息）
+        # mkdir -pv /etc/ansible/roles
+        # wget https://raw.githubusercontent.com/ansible/ansible/devel/examples/ansible.cfg -O /etc/ansible
+
+    3、源码安装（不推荐）
+        # wget https://github.com/ansible/ansible/archive/v2.7.11.tar.gz
+        # yum -y install python-setuptools
+        # easy_install pip
+        # tar axf v2.7.11.tar.gz
+        # cd ansible
+        # pip install -r ./requirements.txt
+        # python setup.py install
+        # mkdir /etc/ansible
+        # cp examples/{hosts,ansible.cfg} /etc/ansible/
+
+    4、Python3环境安装
+        # yum -y install python36 python36-tools
+        # wget https://bootstrap.pypa.io/get-pip.py
+        # python36 get-pip.py
+
+Ansible配置文件读取顺序：
+    1、ANSIBLE_CONFIG环境变量定义的配置文件的位置。
+    2、./ansible.cfg，即当前工作目录下的配置文件。
+    3、～/.ansible.cfg，当前用户家目录下的配置文件。
+    4、/etc/ansible/ansible.cfg，默认目录下的配置文件。

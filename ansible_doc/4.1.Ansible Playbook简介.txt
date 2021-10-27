@@ -1,0 +1,113 @@
+Ansible Playbook
+    playbook是由一个或多个“play”组成的列表。使用“yaml”语言编码。
+
+    play的主要功能在于将事先归并为一组的主机装扮成事先通过ansible中的task定义好的角色。从根本上来讲所谓task无非是调用ansible的一个module。将多个play组织在一个playbook中即可让它们联同起来按事先编排的机制完成工作。
+
+Playbook的组成：
+    1、Target section：定义将要执行playbook的远程主机组。
+    2、Variable section：定义playbook运行时需要使用的变量。
+    3、Task section：定义将要在远程主机上执行的任务列表。
+    4、Handler section：定义task执行完成以后需要调用的任务。
+
+    示例1：参照example/action_form1.yaml
+        ---
+
+        - hosts: all
+          order: reverse_sorted
+          gather_facts: False
+          tasks:
+          - command: ls -l
+            args:
+              chdir: /tmp
+
+    示例2：参照example1/action_form2.yaml
+        ---
+
+        - hosts: all
+          order: reverse_sorted
+          gather_facts: False
+          tasks:
+          - command: ls -l chdir=/tmp
+
+主机执行顺序：
+    - hosts: all
+      order: sorted
+      gather_facts: False
+      tasks:
+      - debug:
+        var: inventory_hostname
+
+    hosts：指定要操作的主机或主机组。
+    order：定义主机的执行顺序，其顺序如下。
+        1、Inventory，默认值，按主机清单的排序顺序执行。
+        2、reverse_inventory，按主机清单的排序逆序执行。
+        3、sorted，以主机名称按字母排序顺序执行。
+        4、reverse_sorted，以主机名称按字母顺序逆序执行。
+        5、shuffle，随机排序。
+    gather_facts：定义是否收集“facts”，如关闭则会缩短“play”执行的时间。
+    tasks：定义一个play中的任务。
+
+    action的关联：
+        1、某任务的关态在运行后为“changed”时，可通过“notify”通知给相应的“handlers”；
+        2、任务可以通过“tags”打标签，而后可在“ansible-playbook”命令上使用“-t”指定进行调用。
+
+Playbook中的执行顺序：
+    1、Variable loading（加载变量）
+    2、Fact gathering（获取全局Fact）
+    3、The pre_tasks execution（执行预执行的task）
+    4、Handlers notified from the pre_tasks execution（执行handlers中的预执行task）
+    5、Roles execution（执行role）
+    6、Tasks execution（执行task）
+    7、Handlers notified from roles or tasks execution（执行handlers中的role或task）
+    8、The Post_tasks execution（执行收尾的task）
+    9、Handlers notified from Post_tasks execution（执行handlers的收尾task）
+
+如果命令或脚本的退出码不为零时，但仍希望后续被关联的操作可以进行，可以使用如相方式：
+    tasks:
+      - name: run this command and ignore the result
+        shell: /usr/bin/somecommand || /bin/true
+
+或者合用“ignore_errors”来忽略错误信息：
+    tasks:
+      - name: run this command and ignore the result
+        shell: /usr/bin/somecommand
+        ignore_errors: True
+
+handlers和notify结合使用触发条件：
+    Handlers：是task列表，这此task与前述的task并没有本质的不同，用于当关注的资源发生变化时，才会采取一定的操作；
+    Notify：用于在每个“play”的最后被触发，这样可避免多次有改变发生时每次都执行指定的操作，仅在所有的变化发生完成后一次性地执行指定操作。在“notify”中列出的操作称为“handler”，也即“notify”中调用“handler”中定义的操作。
+
+    示例：使用范例参见example1/handlers_test1.yaml
+        ---
+        - hosts: all
+          remote_user: root
+
+          tasks:
+            - name: task1
+              mode1: xxxx
+              notify: use handlers
+              ......
+          handlers:
+            - name: use handlers
+              mode2: xxxx
+
+Playbook中的tags的使用：
+    为“action”指定一个关键字作为“tag”，以便于在需要的时候调用“tags”中的内容。
+
+    ****注意：多个“action”可以共用同一个“tags”，而在引用这个“tags”的时候即可触发这多个“action”的执行。
+
+    示例：
+        # cat install_httpd.yaml
+            - hosts: test-hosts
+              remote_user: root
+              tasks:
+                - name: Install httpd
+                  yum: name=httpd state=present
+                - name: Install configure file
+                  copy: src=files/httpd.conf dest=/etc/httpd/conf/
+                  tags: conf
+                - name: start httpd service
+                  tags: service
+                  service: name=httpd state=started enabled=yes
+
+        # ansible-playbook -t conf,service install_httpd.yaml
