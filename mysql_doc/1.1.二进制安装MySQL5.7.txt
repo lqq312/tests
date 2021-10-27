@@ -1,0 +1,170 @@
+二进制安装MySQL 5.7
+
+	1. 检测当前系统上是否安装mariadb-server或mysql-server
+		# rpm -q mariadb-server
+		# rpm -q mariadb
+		# getenforce
+		# systemctl stop firewalld
+		# systemctl disable firewalld
+
+	2. 创建指定用户并下载软件包
+		# groupadd -r mysql
+		# useradd -r -g mysql -s /sbin/nologin -d /usr/local/mysql mysql
+		# wget http://172.16.100.2/source_code_package/mysql/mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz -P /tmp
+		# md5sum /tmp/mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz
+
+	3. 创建数据目录与日志目录
+		# mkdir -pv /database/mysql5.7/{data,binlogs,undologs,logs,run}
+		# mount /dev/database/data /database/mysql5.7/data
+		# mount /dev/database/binlogs /database/mysql5.7/binlogs
+		# chown -R mysql.mysql /database/mysql5.7
+
+	4. 创建配置文件
+		# > /etc/my.cnf
+		# cat >> /etc/my.cnf << EOF
+			[client]
+			socket=/database/mysql5.7/run/mysqld.sock
+			
+			[mysqld]
+			
+			########basic settings########
+			server-id = 11 
+			port = 3306
+			user = mysql
+			bind_address = 172.16.200.12
+			pid-file=/database/mysql5.7/run/mysql.pid
+			autocommit = 0
+			character_set_server=utf8mb4
+			skip_name_resolve = 1
+			max_connections = 800
+			max_connect_errors = 1000
+			datadir = /database/mysql5.7/data
+			transaction_isolation = READ-COMMITTED
+			explicit_defaults_for_timestamp = 1
+			join_buffer_size = 128M
+			tmp_table_size = 64M
+			tmpdir = /tmp
+			max_allowed_packet = 16M
+			sql_mode = "STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER"
+			interactive_timeout = 1800
+			wait_timeout = 1800
+			read_buffer_size = 16M
+			read_rnd_buffer_size = 32M
+			sort_buffer_size = 32M
+			
+			########log settings########
+			log_error = /database/mysql5.7/logs/mysql.err
+			slow_query_log = 1
+			slow_query_log_file =  /database/mysql5.7/logs/mysql.slow
+			log_queries_not_using_indexes = 1
+			log_slow_admin_statements = 1
+			log_slow_slave_statements = 1
+			log_throttle_queries_not_using_indexes = 10
+			expire_logs_days = 90
+			long_query_time = 2
+			min_examined_row_limit = 100
+			
+			########replication settings########
+			master_info_repository = TABLE
+			relay_log_info_repository = TABLE
+			log_bin =  /database/mysql5.7/binlogs/master
+			sync_binlog = 1
+			gtid_mode = on
+			enforce_gtid_consistency = 1
+			log_slave_updates
+			binlog_format = row 
+			relay_log = /database/mysql5.7/binlogs/slave
+			relay_log_recovery = 1
+			binlog_gtid_simple_recovery = 1
+			slave_skip_errors = ddl_exist_errors
+			
+			########innodb settings########
+			innodb_page_size = 8192
+			innodb_buffer_pool_size = 1G
+			innodb_buffer_pool_instances = 8
+			innodb_buffer_pool_load_at_startup = 1
+			innodb_buffer_pool_dump_at_shutdown = 1
+			innodb_lru_scan_depth = 2000
+			innodb_lock_wait_timeout = 5
+			innodb_io_capacity = 4000
+			innodb_io_capacity_max = 8000
+			innodb_flush_method = O_DIRECT
+			innodb_file_format = Barracuda
+			innodb_file_format_max = Barracuda
+			innodb_log_group_home_dir = /database/mysql5.7/undologs
+			innodb_undo_logs = 128
+			innodb_undo_tablespaces = 3
+			innodb_flush_neighbors = 1
+			innodb_log_file_size = 1G
+			innodb_log_buffer_size = 16M
+			innodb_purge_threads = 4
+			innodb_large_prefix = 1
+			innodb_thread_concurrency = 64
+			innodb_print_all_deadlocks = 1
+			innodb_strict_mode = 1
+			innodb_sort_buffer_size = 64M 
+			
+			########semi sync replication settings########
+			plugin_dir=/usr/local/mysql/lib/plugin
+			plugin_load = "rpl_semi_sync_master=semisync_master.so;rpl_semi_sync_slave=semisync_slave.so"
+			loose_rpl_semi_sync_master_enabled = 1
+			loose_rpl_semi_sync_slave_enabled = 1
+			loose_rpl_semi_sync_master_timeout = 5000
+			
+			[mysqld-5.7]
+			innodb_buffer_pool_dump_pct = 40
+			innodb_page_cleaners = 4
+			innodb_undo_log_truncate = 1
+			innodb_max_undo_log_size = 2G
+			innodb_purge_rseg_truncate_frequency = 128
+			binlog_gtid_simple_recovery=1
+			log_timestamps=system
+			transaction_write_set_extraction=MURMUR32
+			show_compatibility_56=on
+			
+			[mysqld_safe]
+			socket=/database/mysql5.7/run/mysqld.sock
+			EOF
+
+	5. 解压指定软件包并开始安装
+		# tar axf /tmp/mysql-5.7.17-linux-glibc2.5-x86_64.tar.gz -C /usr/local
+		# cd /usr/local/
+		# ln -s mysql-5.7.17-linux-glibc2.5-x86_64 mysql
+		# bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/database/mysql5.7/data
+			此时会生成一段初始密码，该密码可能会存放于错误日志中（A temporary password is generated for root@localhost: L:fokfOgt3ga）
+		# bin/mysql_ssl_rsa_setup --datadir=/database/mysql5.7/data
+
+	6. 安装后操作 
+		# cat >> /etc/systemd/system/mysqld.service << EOF
+			[Unit]
+			Description=MySQL database server 
+			After=syslog.target
+			After=network.target
+			
+			[Service]
+			Type=simple
+			User=mysql
+			Group=mysql
+			ExecStart=/usr/local/mysql/bin/mysqld_safe --defaults-file=/etc/my.cnf
+			
+			[Install]
+			WantedBy=multi-user.target
+			EOF
+		# echo "export PATH=/usr/local/mysql/bin:$PATH" >> /etc/profile.d/mysql.sh
+		# source /etc/profile.d/mysql.sh
+		# chown -R mysql:mysql /usr/local/mysql /mysql
+		# chown -R mysql.mysql /database/mysql5.7
+		
+	7. 导出库文件和头文件
+		# ln -s /usr/local/mysql/include /usr/include/mysql
+		# echo "/usr/local/mysql/lib" >> /etc/ld.so.conf.d/mysql.conf
+		# ldconfig
+		# ldconfig -p | grep mysql
+
+	8. 修改初始密码
+		# mysql -uroot -hlocalhost -p
+		mysql> SET PASSWORD="redhat";
+		mysql> FLUSH PRIVILEGES;
+
+
+注意：MySQL5.6的部分版本与MySQL5.7的版本的“mysql.user”表中的“password”字段已修改为“authentication_string”。

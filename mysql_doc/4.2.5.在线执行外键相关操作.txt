@@ -1,0 +1,16 @@
+外键相关操作
+
+	+-----------------------------------+----------+----------------+------------------------+------------------------+
+	|             Operation             | In Place | Rebuilds Table | Permits Concurrent DML | Only Modifies Metadata |
+	+-----------------------------------+----------+----------------+------------------------+------------------------+
+	| Adding a foreign key constraint   | Yes *    | No             | Yes                    | Yes                    |
+	| Dropping a foreign key constraint | Yes      | No             | Yes                    | Yes                    |
+	+-----------------------------------+----------+----------------+------------------------+------------------------+
+
+添加外键约束：
+	语法：
+		ALTER TABLE tbl1 ADD CONSTRAINT fk_name FOREIGN KEY index (col1)   REFERENCES tbl2(col2) referential_actions;
+
+删除外键约束：
+	语法：
+		ALTER TABLE tbl DROP FOREIGN KEY fk_name;

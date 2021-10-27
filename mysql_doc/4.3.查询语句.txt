@@ -1,0 +1,81 @@
+查询语句
+
+SELECT语句的惯常用法：
+	SELECT ...;
+	SELECT ... FROM ... WHERE ...;
+	SELECT ... FROM ... HAVING ...;
+	SELECT ... FROM ... ORDER BY ...;
+	SELECT ... FROM ... GROUP BY ... HAVING ...;
+	SELECT ... FROM ... WHERE ... GROUP BY ... LIMIT ...;
+
+SELECT语句的执行流程：
+	SELECT DISTINCT <select_list>
+	FROM <left_table>
+	<join_type> JOIN <right_table>
+	ON <join_condition>
+	WHERE <where_condition>
+	GROUP BY <group_by_list>
+	WITH {CUBE | ROLLUP}
+	HAVING <having_condition>
+	ORDER BY <order_by_list>
+	LIMIT <limit_number>
+
+	处理流程：
+		1、FROM，对FROM子句中的左表<left_table>和右表<right_table>执行笛卡尔积（Cartesian product），产生虚拟表“VT1”。
+		2、ON，对虚拟表“VT1”应用ON筛选条件，只有那些符合<join_condition>的行才被插和虚表“VT2”中。
+		3、JOIN，如果指定了OUTER JOIN（如“LEFT OUTER JOIN”、“RIGHT OUTER JOIN”）那么保留表中未匹配的行作为外部行添加到虚氛表“VT2”中，产生虚拟表“VT3”。如果FROM子句包含两个以上表，则对上一个连接生成的结果表“VT3”和下一个表重复执行步骤1～步骤3，直到处理完成有的表为止。
+		4、WHERE，对虚拟表“VT3”应用WHERE过滤条件，只有符合<where_condition>的记录才被插入虚拟表VT4中。
+		5、GROUP BY，根据GROUP BY子句中的列，对“VT4”中的记录进行分组，产生“VT5”。
+		6、CUBE | ROLLUP，对表“VT5”进行CUBE或ROLLUP操作，产生表“VT6”。
+		7、HAVING，对虚拟表“VT6”应用HAVING过滤器，只有符合<having_condition>的记录才被插入虚拟表“VT7”中。
+		8、SELECT，第二次执行SELECT操作，选择指定的列，插入虚拟表“VT8”。
+		9、DISTINCT，去除重复数据，产生虚拟表“VT9”。
+		10、ORDER BY，将虚拟表“VT9”中的记录按照<order_by_list>进行排序操作，产生虚拟表“VT10”。
+		11、LIMIT，取出指定行的记录，产生虚拟表“VT11”，并返回组查询用户。
+
+查询语法：
+	SELECT [ALL | DISTINCT | DISTINCTROW ] [HIGH_PRIORITY] [STRAIGHT_JOIN] [SQL_SMALL_RESULT] [SQL_BIG_RESULT] [SQL_BUFFER_RESULT] [SQL_CACHE | SQL_NO_CACHE] [SQL_CALC_FOUND_ROWS] select_expr [, select_expr ...] [FROM table_references [PARTITION partition_list] [WHERE where_condition] [GROUP BY {col_name | expr | position} [ASC | DESC], ... [WITH ROLLUP]] [HAVING where_condition] [ORDER BY {col_name | expr | position} [ASC | DESC], ...] [LIMIT {[offset,] row_count | row_count OFFSET offset}] [PROCEDURE procedure_name(argument_list)] [INTO OUTFILE 'file_name' [CHARACTER SET charset_name] export_options | INTO DUMPFILE 'file_name' | INTO var_name [, var_name]] [FOR UPDATE | LOCK IN SHARE MODE]]
+
+	注意事项：
+		1、在“SELECT”中使用“LIMIT [offset,] row_count”仍会遍历表中的前“offset”行。
+		2、不建议在线上执行“SELECT”时使用“[ALL | DISTINCT | DISTINCTROW ]”、“[HIGH_PRIORITY]”、“[STRAIGHT_JOIN]”、“[SQL_SMALL_RESULT]”、“[SQL_BIG_RESULT]”、“[SQL_BUFFER_RESULT]”、“[SQL_CACHE | SQL_NO_CACHE]”和“[SQL_CALC_FOUND_ROWS]”这样的参数（其一，此类参数为非标准化的参数，其二，只有部分存储引擎支持此类操作）。
+			注意：以下的SELECT语句修饰符一般用于MyISAM表中的查询中。
+				a、DISTINCT用于指定结果相同的只显示一资。
+				b、SQL_CACHE用于指定语句缓存于查询缓存中。
+				c、SQL_NO_CACHE用于指定名句不缓存于查询缓存中。
+		3、在使用“ASC”或“DESC”进行排序时不一定会创建临时表，如果排序的字段是索引，则不会创建临时表，否则就会创建临时表。
+
+	select_expr [, select_expr ...]：指定要查询的字段。
+	FROM table_references：指定从哪些表中进行查询操作。
+	WHERE where_condition：指定查询时的过滤条件。
+	GROUP BY {col_name | expr | position} [ASC | DESC], ... [WITH ROLLUP]：指定分组；
+		ASC：指定排序规则为升序。
+		DESC：指定排序规则为降序。
+	HAVING where_condition：分组的条件。
+	ORDER BY {col_name | expr | position} [ASC | DESC], ...：指定查询后的排序规则。
+	LIMIT {[offset,] row_count | row_count OFFSET offset}：指定对查询后的结果予以显示，以指定显示的行以及偏移量。
+
+WHERE条件表达式：
+	WHERE EXPRESSION [{AND | OR }]
+		EXPRESSION：
+			column {OPERATOR value | IS NULL | IS NOT NULL | LIKE string | RLIKE pattern | REGEXP pattern | IN (value1,value2,...) | BETWEEN ... AND ...}
+			OPERATOR：
+				=：等值比较。
+				<=>：与空值比较不会产生意外情况。
+				<>：不等值比较，也可使用!=表示相同含义。
+				<：小于。
+				<=：小于或等于。
+				>：大于。
+				>=：大于或等于。
+			IS NULL：判断值是否为空。
+			IS NOT NULL：判断是否非空。
+			LIKE: 支持的通配符: %(任意长度的任意字符)，_（任意单个字符）。
+			RLIKE, REGEXP: 支持使用正则表达式，仅做字符串比较，且性能较差。
+			IN: 判断指定字段的值是否在给定在列表中。
+			BETWEEN ... AND ...: 位于指定的范围之间，数值范围包括两端的数值；
+
+		多个表达式之间也支持组合使用：
+			NOT, !
+			AND, &&
+			OR, ||
+			XOR：异或运算。

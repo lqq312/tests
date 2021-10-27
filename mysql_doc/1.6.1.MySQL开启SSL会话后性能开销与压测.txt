@@ -1,0 +1,4 @@
+MySQL开启SSL会话后性能开销与压测方法
+	1、可使用mysql自带的“mysqlslap”进行性能压测
+	2、使用“sysbench”进行基准测试
+

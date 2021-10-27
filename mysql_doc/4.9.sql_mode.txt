@@ -1,0 +1,3 @@
+SQL模式：
+
+strict_trans_tables：严格检查插入至“ENUM”列的字符串是否是“ENUM”集合中的一个元素。

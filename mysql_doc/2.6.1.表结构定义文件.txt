@@ -1,0 +1,58 @@
+表结构定义文件
+
+表结构定义文件是二进制的，无法直接查看：
+	shell> file customer.frm
+		customer.frm: MySQL table definition file Version 10
+
+可通过“hexdump”查看其二进制的内容：
+	shell> hexdump customer.frm
+		能看到的也只是二进制的代码。
+
+	shell> hexdump -C customer.frm
+		可查看到部分关键字信息。
+
+查看mysql表结构定义文件的方法：
+	1、登陆MySQL后通过mysql的命令查看
+		mysql> show create table customer\G
+			*************************** 1. row ***************************
+			       Table: customer
+			Create Table: CREATE TABLE `customer` (
+			  `c_custkey` int(11) NOT NULL,
+			  `c_name` varchar(25) DEFAULT NULL,
+			  `c_address` varchar(40) DEFAULT NULL,
+			  `c_nationkey` int(11) DEFAULT NULL,
+			  `c_phone` char(15) DEFAULT NULL,
+			  `c_acctbal` double DEFAULT NULL,
+			  `c_mktsegment` char(10) DEFAULT NULL,
+			  `c_comment` varchar(117) DEFAULT NULL,
+			  PRIMARY KEY (`c_custkey`),
+			  KEY `i_c_nationkey` (`c_nationkey`),
+			  CONSTRAINT `customer_ibfk_1` FOREIGN KEY (`c_nationkey`) REFERENCES `nation` (`n_nationkey`)
+			) ENGINE=InnoDB DEFAULT CHARSET=latin1
+
+	2、使用shell下的mysqlfrm命令查看（在本地配置上tsinghua的镜像源）
+		shell> yum -y install mysql-utilities
+		shell> ln -s /usr/lib/python2.7/site-packages/mysql/utilities /usr/lib64/python2.7/site-packages/mysql/utilities
+		shell> mysqlfrm  --diagnostic ./customer.frm
+			# WARNING: Cannot generate character set or collation names without the --server option.
+			# CAUTION: The diagnostic mode is a best-effort parse of the .frm file. As such, it may not identify all of the components of the table correctly. This is especially true for damaged files. It will also not read the default values for the columns and the resulting statement may not be syntactically correct.
+			# Reading .frm file for ./customer.frm:
+			# The .frm file is a TABLE.
+			# CREATE TABLE Statement:
+
+			CREATE TABLE `customer` (
+			  `c_custkey` int(11) NOT NULL, 
+			  `c_name` varchar(25) DEFAULT NULL, 
+			  `c_address` varchar(40) DEFAULT NULL, 
+			  `c_nationkey` int(11) DEFAULT NULL, 
+			  `c_phone` char(15) DEFAULT NULL, 
+			  `c_acctbal` double DEFAULT NULL, 
+			  `c_mktsegment` char(10) DEFAULT NULL, 
+			  `c_comment` varchar(117) DEFAULT NULL, 
+			PRIMARY KEY `PRIMARY` (`c_custkey`),
+			KEY `i_c_nationkey` (`c_nationkey`)
+			) ENGINE=InnoDB;
+
+			#...done.
+
+表结构定义文件可在仅有.frm文件和.idb文件时进行数所恢复

@@ -1,0 +1,73 @@
+MySQL Proxy(6.2.14章)
+	MariaDB具有role功能（MySQL自带test_plugin_server，该插件可实现proxy的功能）。
+定义了“proxy”之后，处于该角色下的所有用户都具有相同的权限。
+
+开启mysql的proxy的功能：
+	启用用户映射功能：
+		mysql> check_proxy_users=1;
+
+	启用mysql_native_password插件的用户认证功能：
+		mysql> mysql_native_password_proxy_users=1;
+		
+		如需启用则开启即可，建议使用该插件
+	启用sha256_password插件的用户认证功能：
+		mysql> sha256_password_proxy_users=1;
+	
+	显示当前用户映射的账号：
+		mysql> proxy_user
+		
+示例1：创建“junior_dba”用户组并为其赋予“SELECT”、“UPDATE”，“INSERT”的权限，将“tom”和“jim”加入该组，使得“tom”和“jim”也具有“junior_dba”相同的权限。
+	mysql> CREATE USER "junior_dba"@"%" IDENTIFIED BY "redhat";
+	mysql> CREATE USER "jim"@"%" IDENTIFIED BY "redhat";
+	mysql> CREATE USER "tom"@"%" IDENTIFIED BY "redhat";
+	mysql> GRANT PROXY ON "junior_dba"@"%" TO "jim"@"%";
+	mysql> GRANT PROXY ON "junior_dba"@"%" TO "tom"@"%";
+	mysql> GRANT SELECT,UPDATE,INSERT ON *.* TO "junior_dba"@"%";
+	mysql> FLUSH PRIVILEGES;
+	mysql> SHOW GRANTS FOR "junior_dba"@"%";
+		+---------------------------------------------------------+
+		| Grants for junior_dba@%                                 |
+		+---------------------------------------------------------+
+		| GRANT SELECT, INSERT, UPDATE ON *.* TO 'junior_dba'@'%' |
+		+---------------------------------------------------------+
+	mysql> SHOW GRANTS FOR "jim"@"%";
+		+----------------------------------------------+
+		| Grants for jim@%                             |
+		+----------------------------------------------+
+		| GRANT USAGE ON *.* TO 'jim'@'%'              |
+		| GRANT PROXY ON 'junior_dba'@'%' TO 'jim'@'%' |
+		+----------------------------------------------+
+	mysql> SHOW GRANTS FOR "tom"@"%";
+		+----------------------------------------------+
+		| Grants for tom@%                             |
+		+----------------------------------------------+
+		| GRANT USAGE ON *.* TO 'tom'@'%'              |
+		| GRANT PROXY ON 'junior_dba'@'%' TO 'tom'@'%' |
+		+----------------------------------------------+
+
+在MySQL 5.6上实现proxy的功能
+	1、安装插件
+		mysql> INSTALL PLUGIN test_plugin_server SONAME 'auth_test_plugin.so';
+
+	2、确认插件生效（查看最后一行）
+		mysql> SHOW PLUGINS\G
+			...
+			*************************** 43. row ***************************
+			   Name: test_plugin_server
+			 Status: ACTIVE
+			   Type: AUTHENTICATION
+			Library: auth_test_plugin.so
+			License: GPL
+
+	3、创建proxy用户
+		mysql> GRANT ALL ON *.* TO "team1"@"192.168.0.%" IDENTIFIED BY "password";
+		mysql> FLUSH PRIVILEGES;
+
+	4、为创建的proxy用户添加成员用户
+		mysql> CREATE USER "user1"@"192.168.0.%" IDENTIFIED WITH test_plugin_server AS "password";
+		mysql> GRANT PROXY ON "team1"@"192.168.0.%" TO "user1"@"192.168.0.%";
+
+	参考文档：
+		http://dev.mysql.com/doc/refman/5.6/en/pluggable-authentication.html
+		http://dev.mysql.com/doc/refman/5.6/en/proxy-users.html
+		http://www.dedecms.com/knowledge/data-base/mysql/2012/0819/7386.html

@@ -1,0 +1,55 @@
+子查询：在一个SELECT语句中嵌套另一个SELECT语句。
+
+    在MySQL5.6之前mysql的子查询的性能不好一般建议重写成“JOIN”。
+
+用于WHERE子句的查询：
+    1、用于比较表达式中的子查询，而子查询的返回值只能有一个。
+    2、用于EXISTS中的子查询，用于判断存在与否。
+    3、用于IN中的子查询，用于判断存在于指定列表中。
+
+    operand comparison_operator ANY (subquery)
+    operand IN (subquery)
+    operand comparison_operator SOME (subquery)
+    operand comparison_operator ALL (subquery)
+
+    ANY：对于在子查询返回的列中的任一数值，如果比较结果为TRUE的话，则返回为TRUE
+        SELECT s1 FROM t1 WHERE s1 > ANY (SELECT s1 FROM t2);
+
+    SOME = ANY
+
+    “IN”等同于“= ANY”，如下：
+        SELECT s1 FROM t1 WHERE s1 = ANY (SELECT s1 FROM t2);
+        SELECT s1 FROM t1 WHERE s1 IN (SELECT s1 FROM t2);
+
+    ALL：对于子查询返回的列中的所有值，如果比较结果为TRUE，则返回TRUE
+
+    “NOT IN”等同于“<> ALL”
+        SELECT s1 FROM t1 WHERE s1 > ALL (SELECT s1 FROM t2);
+
+
+用于FROM中的子查询：
+    必须对FROM子句的第一个筛选条件定义一个别名作为虚表进行引用。
+        SELECT alias.col1, ... FROM (SELECT CLAUSE) AS alias WHERE condition
+
+独立子查询：
+    self-contained subquery
+    不依赖外部查询而运行的子查询，如下示例：
+        SELECT customerid FROM orders WHERE employeeid IN (1, 2, 3 ,4 ,8) GROUP BY customerid HANING COUNT(DISTINCT employeeid) = 5;
+        此处的IN所使用的条件是单独指定的，而不是通过外部查询得来的，因此为独立子查询。
+
+相关子查询：
+    correlated subquery
+    dependent subquery
+    引用了外部查询列的子查询
+        SELECT orderid, customerid, employeeid, orderdate, requiredate FROM orders WHERE orderdate IN (SELECT MAX(orderdate) FROM orders GROUP BY employeeid);
+
+子查询的优化：
+    MySQL IN优化器不完善，一般建议重写成“JOIN”。
+        优化前的语句：
+            SELECT ... FROM t1 WHERE t1.a IN (SELECT b FROM t2);
+        优化后的语句：
+            SELECT ... FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE t2.b = t1.a);
+
+SELECT * FROM orders WHERE o_orderDate in ( SELECT max(o_orderDate) FROM orders GROUP BY DATE_FORMAT(o_orderdate, '%Y%M'));
+
+SELECT (SELECT COUNT(1) FROM employees b WHERE b.emp_no <= a.emp_no) AS row_number, emp_no, CONCAT(last_name," ",first_name) AS name, gender, hire_date FROM employees AS a LIMIT 10;

@@ -1,0 +1,177 @@
+JSON（JavaScript Object Notation）
+1. MySQL 5.7版本将Json替换BLOB类型，实现原生支持Json。
+2. 在MySQL原生支持Json之前如需将Json数据插入至关系型数据库，就需要在数据库中定义一个BLOB类型的列，在应用程序上将数年据转换成Json格式，然后再插入。但如果使用这种方式会有如下三种缺陷：
+		a、无法对JSON数据的有效性进行检查：BLOB类型无法的数据库层实现约束性检查。
+		b、查询不需要遍历所有字符串才能找到的数据。
+		c、仅支持部分属性索引，通过虚拟列的功能可以对JSON中的部分数据进行索引。
+
+建表时将字段定义为JSON：
+	示例1：
+		mysql> CREATE TABLE t9 (
+		    -> uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+		    -> data JSON NOT NULL ) ENGINE=InnoDB;
+		mysql> INSERT INTO t9 VALUES 
+			-> (NULL, '{"name":"David","mail":"david@beadlwallet.com","age":"20","address":"XXXX road XXX "}');
+    	mysql> INSERT INTO t9 VALUES 
+			-> (NULL, '{"name":"tom","mail":"tom@beadwallet.com"}');
+    	mysql> SELECT * FROM t9;
+			+-----+----------------------------------------------------------------------------------------------+
+			| uid | data                                                                                         |
+			+-----+----------------------------------------------------------------------------------------------+
+			|   1 | {"age": "20", "mail": "david@beadlwallet.com", "name": "David", "address": "XXXX road XXX "} |
+			|   2 | {"mail": "tom@beadwallet.com", "name": "tom"}                                                |
+			+-----+----------------------------------------------------------------------------------------------+
+		mysql> INSERT INTO t9 VALUES (NULL, "test");
+			3140 - Invalid JSON text: "Invalid value." at position 1 in value for column 't9.data'.
+				注意：以上报错即为MySQL对“JSON”字段进行的有效性的检查，如果插入的是非“JSON”类型的字段则会报错。
+
+		mysql> INSERT INTO t9 SELECT uid,JSON_OBJEC('name',name,'email',email,'address',address) AS data FROM User;
+
+查询JSON字段中某个“Field”的值：
+	JSON_EXTRACT(json_doc, path[, path] ...)：可查询JSON列中的某Field的值（见示例2）。
+
+	示例2：
+		mysql> SELECT * FROM t9;
+			+-----+----------------------------------------------------------------------------------------------+
+			| uid | data                                                                                         |
+			+-----+----------------------------------------------------------------------------------------------+
+			|   1 | {"age": "20", "mail": "david@beadlwallet.com", "name": "David", "address": "XXXX road XXX "} |
+			|   2 | {"mail": "tom@beadwallet.com", "name": "tom"}                                                |
+			+-----+----------------------------------------------------------------------------------------------+
+		mysql> SELECT JSON_EXTRACT(data, '$.name', '$.age') FROM t9;
+			+---------------------------------------+
+			| JSON_EXTRACT(data, '$.name', '$.age') |
+			+---------------------------------------+
+			| ["David", "20"]                       |
+			| ["tom"]                               |
+			+---------------------------------------+
+
+在某行数据的JSON字段中新增一个“Field”和对应的“Value”：
+	JSON_INSERT(json_doc, field, val[, field, val] ...)：将field和value插入至指定的JSON文档中，如field已存在则新的value不会覆盖已有的value（见示例3）。
+
+	示例3：
+		mysql> SELECT * FROM UserJson;
+			+----+------------------------------------------------------------------------+
+			| id | data                                                                   |
+			+----+------------------------------------------------------------------------+
+			|  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   |
+			|  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} |
+			|  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        |
+			+----+------------------------------------------------------------------------+
+		mysql> UPDATE UserJson SET data = JSON_INSERT(data, '$.address2', 'HuBei', '$.name', 'jim') WHERE id = 1;
+			Query OK, 3 rows affected (0.03 sec)
+			Rows matched: 3  Changed: 3  Warnings: 0
+		mysql> SELECT * FROM UserJson;
+			+----+---------------------------------------------------------------------------------------------+
+			| id | data                                                                                        |
+			+----+---------------------------------------------------------------------------------------------+
+			|  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing", "address2": "HuBei"}   |
+			|  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"                       |
+			|  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"                              |
+			+----+---------------------------------------------------------------------------------------------+
+			注意：在执行“UPDATE”时通过“JSON_INSERT()”函数插入了“$.address2”和“$.name”，但“address2”在原JSON文档中不存在，因此会插入至原JSON数据中，而“name”在原JSON文档中已存在，因此不会执行插入。
+
+为JSON字段创建索引：为JSON类型的数据创建列时必须创建一个虚拟列，然后为这个虚拟列创建索引（见示例4）；也可以在通过JSON字段创建一个实际存储的列，然后再在这个实际存储的列上创建索引（见示例5）（虚拟列无法创建全文索引，而实际存储的列是可以创建索引的）。
+	方法1（创建虚拟列）：
+		mysql> ALTER TABLE tb_name ADD COLUMN column_name COLUMN_TYPE GENERATED ALWAYS AS (JSON_EXTRACT(json_column,'$.key')) VIRTUAL;
+		mysql> ALTER TABLE tb_name ADD INDEX index_name (json_virt_column);
+
+		注意：创建的虚拟列后在执行数据插入时无需对虚拟列进行数据插入，虚拟列是根据JSON列自动计算得来。
+
+		在虚拟列上无法创建全文索引。
+
+	方法2（创建实际存储列）：
+		mysql> ALTER TABLE tb_name ADD COLUMN column_name COLUMN_TYPE GENERATED ALWAYS AS (JSON_EXTRACT(json_column,'$.key')) STORED;
+		mysql> ALTER TABLE tb_name ADD FULLINDEX INDEX index_fulltext_name (name_stored);
+
+	示例4：
+		mysql> SELECT * FROM t11;
+			+----+------------------------------------------------------------------------+
+			| id | data                                                                   |
+			+----+------------------------------------------------------------------------+
+			|  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   |
+			|  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} |
+			|  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        |
+			+----+------------------------------------------------------------------------+
+		mysql> ALTER TABLE t11 ADD COLUMN name VARCHAR(50) GENERATED ALWAYS AS (JSON_EXTRACT(data,'$.name')) VIRTUAL; 
+		mysql> SELECT * FROM t11;
+			+----+------------------------------------------------------------------------+---------+
+			| id | data                                                                   | name    |
+			+----+------------------------------------------------------------------------+---------+
+			|  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   | "tom"   |
+			|  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} | "jerry" |
+			|  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        | "lucy"  |
+			+----+------------------------------------------------------------------------+---------+
+		mysql> ALTER TABLE t11 ADD INDEX name (name);
+		mysql> INSERT INTO t11(data) VALUE ('{"name":"jim","email":"jim@123.com","address":"jiangxi"}');
+		mysql> SELECT * FROM t11;
+			+----+------------------------------------------------------------------------+---------+
+			| id | data                                                                   | name    |
+			+----+------------------------------------------------------------------------+---------+
+			|  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   | "tom"   |
+			|  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} | "jerry" |
+			|  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        | "lucy"  |
+			|  4 | {"name": "jim", "email": "jim@123.com", "address": "jiangxi"}          | "jim"   |
+			+----+------------------------------------------------------------------------+---------+
+
+	示例5：
+		mysql> SELECT * FROM t2;
+			+----+-------------------------------------------------------------+
+			| id | data                                                        |
+			+----+-------------------------------------------------------------+
+			|  1 | {"age": 20, "name": "tom", "email": "tom@126.com"}          |
+			|  2 | {"age": 23, "name": "jerry", "email": "jerry@163.com"}      |
+			|  3 | {"age": 21, "name": "lucy", "email": "lucy@beadwallet.com"} |
+			+----+-------------------------------------------------------------+
+		mysql> ALTER TABLE t2 ADD COLUMN name VARCHAR(50) GENERATED ALWAYS AS (JSON_EXTRACT(data,'$.name')) STORED;
+		mysql> SELECT * FROM t2;
+			+----+-------------------------------------------------------------+---------+
+			| id | data                                                        | name    |
+			+----+-------------------------------------------------------------+---------+
+			|  1 | {"age": 20, "name": "tom", "email": "tom@126.com"}          | "tom"   |
+			|  2 | {"age": 23, "name": "jerry", "email": "jerry@163.com"}      | "jerry" |
+			|  3 | {"age": 21, "name": "lucy", "email": "lucy@beadwallet.com"} | "lucy"  |
+			+----+-------------------------------------------------------------+---------+
+		mysql> ALTER TABLE t2 ADD INDEX name (name); 
+		mysql> EXPLAIN SELECT * FROM t2 WHERE name="tom"\G
+			*************************** 1. row ***************************
+			           id: 1
+			  select_type: SIMPLE
+			        table: t2
+			   partitions: NULL
+			         type: ref
+			possible_keys: name
+			          key: name
+			      key_len: 103
+			          ref: const
+			         rows: 1
+			     filtered: 100.00
+			        Extra: NULL
+		mysql> SHOW CREATE TABLE t2\G
+			*************************** 1. row ***************************
+			       Table: t2
+			Create Table: CREATE TABLE `t2` (
+			  `id` int(11) NOT NULL AUTO_INCREMENT,
+			  `data` json NOT NULL,
+			  `name` varchar(50) GENERATED ALWAYS AS (json_extract(`data`,'$.name')) STORED,
+			  PRIMARY KEY (`id`),
+			  KEY `name` (`name`)
+			) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=gbk
+		mysql> SELECT * FROM t2;
+			+----+------------------------------------------------------------------------------------+--------+
+			| id | data                                                                               | name   |
+			+----+------------------------------------------------------------------------------------+--------+
+			|  1 | {"age": 20, "name": "jim", "email": "jim@126.com", "address": "beijing"}           | "jim"  |
+			|  2 | {"age": 22, "name": "tom", "email": "tom@163.com", "address": "wuhan"}             | "tom"  |
+			|  3 | {"age": 21, "name": "lucy", "email": "lucy@beadwallet.com", "address": "changsha"} | "lucy" |
+			+----+------------------------------------------------------------------------------------+--------+
+		mysql> INSERT INTO t2(data) VALUE ('{"name":"lily","email":"lily@126.com","age":24,"address":"wuhan"}');
+		mysql> SELECT * FROM t2;
+			+----+------------------------------------------------------------------------------------+--------+
+			| id | data                                                                               | name   |
+			+----+------------------------------------------------------------------------------------+--------+
+			|  1 | {"age": 20, "name": "jim", "email": "jim@126.com", "address": "beijing"}           | "jim"  |
+			|  2 | {"age": 22, "name": "tom", "email": "tom@163.com", "address": "wuhan"}             | "tom"  |
+			|  3 | {"age": 21, "name": "lucy", "email": "lucy@beadwallet.com", "address": "changsha"} | "lucy" |
+			|  4 | {"age": 24, "name": "lily", "email": "lily@126.com", "address": "wuhan"}           | "lily" |
+			+----+------------------------------------------------------------------------------------+--------+

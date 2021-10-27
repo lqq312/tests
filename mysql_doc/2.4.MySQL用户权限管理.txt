@@ -1,0 +1,240 @@
+MySQL认证过程：
+    1、用户名和IP是否允许，如果通过不被允许的IP访问数据库的服务则会被MySQL服务拒绝；
+    2、查看mysql.user表，在该表下的用户对所有库均有权限；
+    3、查看mysql.db表，在该表下的用户仅对指定库有权限；
+    4、查看mysql.table_priv表
+    5、查看mysql.column_priv表
+
+用户权限管理：
+	SQL语句：
+		SELECT
+		INSERT
+		UPDATE
+		DELETE
+		REPLACE
+		INDEX
+
+	存储过程：
+		CREATE ROUTING
+		ALTER ROUTING
+		EXECUTE
+		TRIGGER
+
+	管理权限：
+		SUPER
+		RELOAD
+		SHOW DATABASE
+		SHUTDOWN
+		GRANT OPTION
+
+	mysql所有权限对应mysql.user表的字段：
+		ALL [PRIVILEGES]：等同于“all privileges”即所有权限（但不包括“grant option”权限），主要用于服务器管理员。
+
+		ALTER：修改权限，对应字段“Alter_priv”，表级别权限。
+			1、允许使用“ALTER TABLE”来更改表结构，但“ALTER TABLE”还需要“CREATE”和“INSERT”的权限。
+			2、重命名表则需要对旧表有“ALTER”和“DROP”以及新表的“CREATE”和“INSERT”权限。
+
+		ALTER ROUTINE：对应字段“Alter_routine_priv”，允许修改或册除存储例程，包括存储过程和存储函数。
+
+		CREATE：对应字段“Create_priv”，包括创建表、库。
+
+		CREATE ROUTINE：对应字段“Create_routine_priv”，允许创建存储过程和存储函数。
+
+		CREATE TABLESPACE：对应字段“Create_tablespace_priv”，允许使用创建、更改或删除表空间和日志文件，主要用于服务器管理。
+
+		CREATE TEMPORARY TABLES：对应字段“Create_tmp_table_priv”，创建临时表。
+			1、临时表保存在内存中，会话创建临时表后，服务器不会对表执行进一步的权限检查。 2、创建会话可以对表执行任何操作，例如DROP TABLE，INSERT，UPDATE或SELECT，具体可参见13.1.18.3节“CREATE TEMPORARY TABLE语法”。
+
+		CREATE USER：对应字段“Create_user_priv”，用于创建用户，管理类权限，授予该权限即可执行“ALTER USER”、“CREATE USER”、“DROP USER”、“RENAME USER”，和“REVOKE ALL PRIVILEGES”语句。
+
+		CREATE VIEW：对应字段“Create_view_priv”，可用于创建视图。
+
+		DELETE：对应字段“Delete_priv”，表级别的权限，从表中删除数据行。
+
+		DROP：对应字段“Drop_priv”，对库、表和视图均有删除权限，如需在分区表上执行“ALTER TABLE”、“DROP PARTITION”或“TRUNCATE TABLE”也需要有“DROP”权限。
+
+		EVENT：对应字段“Event_priv”，Event即事件，可以理解为“时间触发器”，可用于每隔一段时间就有固定需求的操作，库级别权限拥有创建，修改，执行和删除事件（event）的权限。
+
+		EXECUTE：对应字段“Execute_priv”，单独授予用户EXECUTE权限，该用户就有了相关范围内的执行存储过程或者调用函数的权限，除此之外，不能删除修改，更不能创建。
+
+		FILE：对应字段“File_priv”。
+			1、可以对服务器的文件系统上的文件进行操作（例如：执行“select ... into outfile”、“load data infile”或执行“LOAD_FILE()”函数都需要有“FILE”的权限）。
+			2、具有该权限可在MySQL服务器具有写权限的任何目录下创建新文件，如需限制读取和写入文件的位置，可将“secure_file_priv”系统变量指定为特定目录。
+
+		GRANT OPTION：对应字段“Grant_priv”，允许用户向其他用户授予或撤销自己拥有的权限。
+
+		INDEX：对应字段“Index_priv”，表级别的权限，创建和删除索引的权限，如该用户同时具有“CREATE”权限，则可以在“CREATE TABLE”语句中包含索引的定义。
+
+		INSERT：对应字段“Insert_priv”，表或字段级别的权限。
+			1、定义是否能够执行插入数据。
+			2、“ANALYZE TABLE”、“OPTIMIZE TABLE”和“REPAIR TABLE”表维护语句也要同时具有“INSERT”权限。
+
+		LOCK TABLES：对应字段“Lock_tables_priv”，库级别的权限，允许使用“LOCK TABLES”来锁定具有“SELECT”权限的表，这包括使用写锁定。
+
+		PROCESS：对应字段“Process_priv”，进程相关的命令。
+			1、拥有该权限可查看当前服务器上执行的所有进程或线程即执行“SHOW PROCESSLIST”、“mysqladmin processlist”或“SHOW ENGINE”的语句。
+
+		PROXY：参照“proxies_priv”表或6.2.14章，主要用于实现类似于“Oracle”中类似于“role”的功能。
+
+		REFERENCES：对应字段“References_priv”。
+			1、有了REFERENCES权限，用户就可以将其它表的一个字段作为某一个表的外键约束，这个权限是库或表级别权限。
+			2、需要注意的是创建外键约束需要父表的“REFERENCES”的权限。
+
+		RELOAD：对应字段“Reload_priv”，管理类权限。
+			1、没有该权限则无法执行“flush [tables|logs|privileges]”（其过程就是将授权表重新加载到内存）以及“mysqladmin”的“flush-hosts”、“flush-logs”、“flush-privileges”、“flush-status”、“flush-tables”、“flush-threads”、“refresh”和“reload”命令。
+			2、“RELOAD”权限还允许使用“RESET MASTER”和“RESET SLAVE”的语句。
+
+		REPLICATION CLIENT：对应字段“Repl_client_priv”。
+			1、拥有此权限可以执行“SHOW MASTER STATUS”、“SHOW SLAVE STATUS”、“SHOW BINARY LOGS”查询master server、slave server的状态。
+
+		REPLICATION SLAVE：对应字段“Repl_slave_priv”。
+			1、拥有此权限可以执行“SHOW SLAVE HOSTS”、“SHOW RELAYLOG EVENTS”和“SHOW BINLOG EVENTS”查看从服务器，从主服务器读取二进制日志并请求对主服务器上的数据库进行的更新。
+			2、将此权限授予从服务器用于连接到当前服务器作为其主服务器的账户。
+			3、注意使用“mysqlbinlog”命令的“--read-from-remote-server”和“--read-from-remote-master”也需要此权限。
+
+		SELECT：对应字段“Select_priv”，表或字段级别权限。
+			1、用于查看表中的数据，需要注意的是“SELECT”只有在实际访问表时才需要“SELECT”权限。
+			2、某些“SELECT”语句不访问表（例如：“SELECT 1+1”）则无需“SELECT”权限。
+			3、读取列值的其他语句也需要“SELECT”权限（例如：对于“UPDATE”语句中的“col_name = expr”赋值右侧引用的列或“DELETE”或“UPDATE”语名的“WHERE”子句中指定的列也需要有“SELECT”权限）。
+			4、与“EXPLAIN”一起使用的表或视图也需要“SELECT”权限，包括视图定义中的所有基础表。
+
+		SHOW DATABASES：对应字段“Show_db_priv”。
+			1、没有该权限则仅能看到当前账户有权限的库。
+			2、如果服务器是使用“--skip-show-database”先项启动的，则不能使用该语句。
+
+		SHOW VIEW：对应字段“Show_view_priv”。
+			1、有该权限才能执行“show create view”。
+			2、与“EXPLAIN”一起使用也需要有此权限。
+
+		SHUTDOWN：对应字段“Shutdown_priv”。
+			1、有该权限可关闭当前实例。
+			2、“mysqladmin shutdown”命令和“mysql_shutdown()”函数也需要此权限。
+
+		SUPER：对应字段“Super_priv”。
+			1、这个权限允许使用“KILL”或“mysqladmin kill”来终止其他账户的线程（每个账户都可kill自己所属的线程）。
+			2、可使用SET语句修改全局变量（具体可参照 5.1.8.1的“System Variable Privileges”）。
+			3、允许更改全局事务特征（具体可参照 13.3.6的“SET TRANSACTION”）。
+			4、具有该权限可启动或停止复制，包括组复制。
+			5、可执行“CHANGE MASTER TO”和“CHANGE REPLICATION FILTER”的语句。
+			6、使用“PURGE MASTER LOGS”和“BINLOGS”语名启用二进制日志控制。
+			7、允许在执行视图或存储程序时设置有效的授权ID，具有此权限的用户可以在视图或存储程序的“DEFINER”属性中指定任何帐户。
+			8、可执行“CREATE SERVER”、“ALTER SERVER”和“DROP  SERVER”语句。
+			9、允许执行“mysqladmin debug”命令。
+			10、启用InnoDB加密密钥轮换。
+			11、允许通过“DES_ENCRYPT()”函数读取DES密钥文件。
+			12、允许使用版本来标记“user-defined”的函数。
+			13、可控制禁止非“SUPER”账户的客户端的连接。
+			14、当“SUPER”客户端连接时，服务器不能执行“init_connect”系统变量的内容。
+			15、即使达到“max_connections”系统变量配置的连接限制，服务器也会接受来自“SUPER”客户端的连接。
+			16、处于“offline”模式的服务器（启用offline_mode）不会在下一个客户端请求时终止“SUPER”客户端的连接，对于来自“SUPER”客户端的新连接会予以接受。
+			17、即使启用了“read_only”系统变量也可以执行更新，以及使用“GRANT”和“REVOKE”等账户管理语句隐式更新表。
+			18、如果启用了二进制日志，也需要具有“SUPER”权限来创建或更更改存储函数（可参见 23.7章“Stored Program Binary Logging”）。
+
+		TRIGGER：对应字段“Trigger_priv”，具有该权限才能创建、删除、执行或显示该表的触发器。
+
+		UPDATE：对应字段“Update_priv”，必须有update的权限，才可以使用update table。
+
+		USAGE：连接（登陆）权限，使用“create user”创建完用户后即拥有该权限。
+
+MySQL创建用户：
+	语法：
+		CREATE USER user [auth_option] [, user [auth_option]] ...
+
+	auth_option：
+	{ IDENTIFIED BY 'auth_string' | IDENTIFIED BY PASSWORD 'hash_string' | IDENTIFIED WITH auth_plugin | IDENTIFIED WITH auth_plugin AS 'hash_string' } 
+
+MySQL删除用户：可同时删除多个用户。
+	语法：
+		DROP USER user [, user] ...
+
+锁定mysql用户：
+	在MySQL 5.7之后，在mysql.user表中，增加了“account_locked”字段，在指定用户的该字段置为“Y”则可以锁定该用户并禁止其登陆。
+
+MySQL授权语法：
+	语法1：
+		GRANT priv_type [(column_list)] [, priv_type [(column_list)]] ... ON [object_type] priv_level TO user [auth_option] [, user [auth_option]] ... [REQUIRE {NONE | tls_option [[AND] tls_option] ...}] [WITH {GRANT OPTION | resource_option} ...]
+
+		WITH GRANT OPTION：定义该用户可以为其他用户授权。
+		REQUIRE：用于限制某个账户仅能使用指定的方式进行连接。
+
+	语法2：
+		GRANT PROXY ON user
+		    TO user [, user] ...
+		    [WITH GRANT OPTION]
+
+	object_type: 
+		{ TABLE | FUNCTION | PROCEDURE }
+
+	priv_level: 
+		{ * | *.* | db_name.* | db_name.tbl_name | tbl_name | db_name.routine_name }
+
+	user:
+	    (see http://dev.mysql.com/doc/refman/5.6/en/account-names.html)
+
+	auth_option: 
+		{ IDENTIFIED BY 'auth_string' | IDENTIFIED BY PASSWORD 'hash_string' | IDENTIFIED WITH auth_plugin | IDENTIFIED WITH auth_plugin AS 'hash_string' }
+
+	tls_option: 
+		{ SSL | X509 | CIPHER 'cipher' | ISSUER 'issuer' | SUBJECT 'subject' }
+
+		注意：
+			1、授权命令中的“REQUIRE”的值指定为“SSL”，表示客户端可使用“SSL”进行连接。
+			2、如授权命令中的“REQUIRE”的值为“X509”，表示客户端必须使用服务端认证的公钥连接服务器端。
+
+	resource_option：对资源进行限制。
+		{ | MAX_QUERIES_PER_HOUR count | MAX_UPDATES_PER_HOUR count | MAX_CONNECTIONS_PER_HOUR count | MAX_USER_CONNECTIONS count }
+			MAX_QUERIES_PER_HOUR count：定义每小时最多能执行多少次查询。
+			MAX_UPDATES_PER_HOUR count：定义每小时最多能执行多少次update。
+			MAX_CONNECTIONS_PER_HOUR count：定义每小时最多能进行多少次连接。
+			MAX_USER_CONNECTIONS count：定义每个用户的连接数。
+
+	注意：在5.7官方不建议使用“GRANT”来创建用户，建议使用“CREATE USER”来创建，使用“GRANT”来完成授权。
+
+MySQL撤销授权语法：REVOKE仅回收权限不能删除用户。
+	语法1：
+		REVOKE priv_type [(column_list)] [, priv_type [(column_list)]] ... ON [object_type] priv_level FROM user [, user] ...
+
+	语法2：
+		REVOKE ALL [PRIVILEGES], GRANT OPTION FROM user [, user] ...
+
+	语法3：
+		REVOKE PROXY ON user FROM user [, user] ...
+
+	注意：revoke只会删除权限而不会删除用户，因此撤销所有权限的用户仍可以登陆到数据库。
+
+MySQL修改用户权限的语法：
+	语法1：
+		ALTER USER [IF EXISTS] user [auth_option] [, user [auth_option]] ... REQUIRE {NONE | tls_option [[AND] tls_option] ...}] [WITH resource_option [resource_option] ...] [password_option | lock_option] ...
+
+	语法2：
+		ALTER USER [IF EXISTS] USER() IDENTIFIED BY 'auth_string'
+
+	user:
+	    (see )
+
+	auth_option:
+		{ IDENTIFIED BY 'auth_string' | IDENTIFIED WITH auth_plugin | IDENTIFIED WITH auth_plugin BY 'auth_string' | IDENTIFIED WITH auth_plugin AS 'hash_string' }
+
+	tls_option: 
+		{ SSL | X509 | CIPHER 'cipher' | ISSUER 'issuer' | SUBJECT 'subject' }
+
+	resource_option: 
+		{ MAX_QUERIES_PER_HOUR count | MAX_UPDATES_PER_HOUR count | MAX_CONNECTIONS_PER_HOUR count | MAX_USER_CONNECTIONS count }
+
+	password_option: 
+		{ PASSWORD EXPIRE | PASSWORD EXPIRE DEFAULT | PASSWORD EXPIRE NEVER | PASSWORD EXPIRE INTERVAL N DAY }
+
+	lock_option: 
+		{ ACCOUNT LOCK | ACCOUNT UNLOCK }
+
+MySQL查看指定用户的权限：
+	查看指定用户的权限：
+		mysql> SHOW GRANTS [FOR user];
+
+	查看当前用户的权限：
+		mysql> SHOW GRANTS;
+		mysql> SHOW GRANTS FOR CURRENT_USER;
+		mysql> SHOW GRANTS FOR CURRENT_USER();
+
+	示例：
+		mysql> SHOW GRANTS FOR "root"@"localhost";

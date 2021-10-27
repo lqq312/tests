@@ -1,0 +1,62 @@
+分区操作
+
+	+----------------------+----------+-------------+
+	|      Partitioning    | In Place | Permits DML |
+	+----------------------+----------+-------------+
+	| PARTITION BY         | No       | No          |
+	| ADD PARTITION        | No       | No          |
+	| DROP PARTITION       | No       | No          |
+	| DISCARD PARTITION    | No       | No          |
+	| IMPORT PARTITION     | No       | No          |
+	| TRUNCATE PARTITION   | Yes      | Yes         |
+	| COALESCE PARTITION   | No       | No          |
+	| REORGANIZE PARTITION | No       | No          |
+	| EXCHANGE PARTITION   | Yes      | Yes         |
+	| ANALYZE PARTITION    | Yes      | Yes         |
+	| CHECK PARTITION      | Yes      | Yes         |
+	| OPTIMIZE PARTITION   | No       | No          |
+	| REBUILD PARTITION    | No       | No          |
+	| REPAIR PARTITION     | Yes      | Yes         |
+	| REMOVE PARTITIONING  | No       | No          |
+	+----------------------+----------+-------------+
+
+PARTITION BY
+	Permits ALGORITHM=COPY, LOCK={DEFAULT|SHARED| EXCLUSIVE}
+
+ADD PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT. Does not copy existing data for tables partitioned by RANGE or LIST. Concurrent queries are permitted for tables partitioned by HASH or LIST. MySQL copies the data while holding a shared lock.
+
+DROP PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT. Does not copy existing data for tables partitioned by RANGE or LIST.
+
+DISCARD PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT
+
+IMPORT PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT
+
+TRUNCATE PARTITION：
+	Does not copy existing data. It merely deletes rows; it does not alter the definition of the table itself, or of any of its partitions.
+
+COALESCE PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT. Concurrent queries are permitted for tables partitioned by HASH or LIST, as MySQL copies the data while holding a shared lock.
+
+REORGANIZE PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT. Concurrent queries are permitted for tables partitioned by LINEAR HASH or LIST. MySQL copies data from affected partitions while holding a shared metadata lock.
+
+EXCHANGE PARTITION：
+	
+
+ANALYZE PARTITION：
+
+CHECK PARTITION：
+
+OPTIMIZE PARTITION：
+	ALGORITHM and LOCK clauses are ignored. Rebuilds the entire table. See Section 22.3.4, “Maintenance of Partitions”.
+
+REBUILD PARTITION：
+	Only permits ALGORITHM=DEFAULT, LOCK=DEFAULT. Concurrent queries are permitted for tables partitioned by LINEAR HASH or LIST. MySQL copies data from affected partitions while holding a shared metadata lock.
+
+REPAIR PARTITION：
+REMOVE PARTITIONING：
+	Permits ALGORITHM=COPY, LOCK={DEFAULT|SHARED| EXCLUSIVE}

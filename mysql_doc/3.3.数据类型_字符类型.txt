@@ -1,0 +1,55 @@
+字符串类型：
+    +-------------+--------------+--------+------------+---------+
+    |     TYPE    |    COMMENT   | N的意义 | 是否有字符集 | 最大长度  |
+    +-------------+--------------+--------+------------+---------+
+    | CHAR(N)     |  定长字符     |  字符   |  是        |   255   |
+    | VARCHAR(N)  |  变长字符     |  字符   |  是        |   16384 |
+    | BINARY(N)   |  定长二进制字节|  字节   |  否        |   255   |
+    | VARBINARY(N)|  变长二进制字节|  字节   |  否        |   16384 |
+    | TINYBLOB    |  二进制大对象  |  字节   |  否        |   256   |
+    | BLOB        |  二进制大对象  |  字节   |  否        |   16K   |
+    | MEDIUMBLOB  |  二进制大对象  |  字节   |  否        |   16M   |
+    | LONGBLOB    |  二进制大对象  |  字节   |  否        |   4G    |
+    | TINYTEXT    |  大对象       |  字节   |  是        |   256   |
+    | TEXT        |  大对象       |  字节   |  是        |   16K   |
+    | MEDIUMTEXT  |  大对象       |  字节   |  是        |   16M   |
+    | LONGTEXT    |  大对象       |  字节   |  是        |   4G    |
+    +-------------+--------------+--------+------------+---------+
+    注意：
+        1、字符类型中仅有CHAR(N)和VARCHAR(N)中的“N”均表示字符长度，而非字节长度。
+        2、在定长的字符中没有字符的位数以空格填充。
+        3、InnoDB为CHAR（N）保留至少N个字节。
+        4、建议不要在数据库中存储“大对象”，犹其是类似视频、图片等。
+        5、在“BLOB”和“TEXT”类型的列上创建索引时，因为“BLOB”和“TEXT”可存储的内容非常长因此在创建索引时必须指定索引前缀的长度（指定索引前缀长度见示例1）。
+        6、“BLOB”和“TEXT”列不能有默认值。
+        7、“BLOB”和“TEXT”列排序时只使用该列的前“max_sort_length”个字节（“max_sort_length”是由系统变量定义，见示例2）。
+        8、对于“BINARY”和“BLOB”类型的字符串是没有字符集的。
+
+    示例1：
+        mysql> CREATE TABLE t4 (id int primary key, txt text, key(txt));
+            1170 - BLOB/TEXT column 'txt' used in key specification without a key length
+            如上所示即针对“BLOB”和“TEXT”类型的开创建索引时没有指定索引前缀的长度。
+        mysql> CREATE TABLE t4 (id int primary key, txt text, key(txt(32)));
+            使用“KEY(column_name(length))”的语法即可。
+
+    示例2：
+        mysql> SELECT @@max_sort_length;
+            +-------------------+
+            | @@max_sort_length |
+            +-------------------+
+            |              1024 |
+            +-------------------+
+         
+        mysql> SELECT @@global.max_sort_length;
+            +--------------------------+
+            | @@global.max_sort_length |
+            +--------------------------+
+            |                     1024 |
+            +--------------------------+
+         
+        mysql> SELECT @@session.max_sort_length;
+            +---------------------------+
+            | @@session.max_sort_length |
+            +---------------------------+
+            |                      1024 |
+            +---------------------------+

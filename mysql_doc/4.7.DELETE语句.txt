@@ -1,0 +1,10 @@
+DELETE
+
+单表DELETE语法：
+    DELETE [LOW_PRIORITY] [QUICK] [IGNORE] FROM tbl_name [PARTITION (partition_name [, partition_name] ...)] [WHERE where_condition] [ORDER BY ...] [LIMIT row_count]
+
+多表DELETE语法1：
+    DELETE [LOW_PRIORITY] [QUICK] [IGNORE] tbl_name[.*] [, tbl_name[.*]] ... FROM table_references [WHERE where_condition]
+
+多表DELETE语法2：
+    DELETE [LOW_PRIORITY] [QUICK] [IGNORE] FROM tbl_name[.*] [, tbl_name[.*]] ... USING table_references [WHERE where_condition]

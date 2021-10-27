@@ -1,0 +1,76 @@
+ENUM & SET：
+	1、ENUM（枚举）类型最多允许65535个值，枚举类型是类似于INT型，对性能不会有影响（注意：枚举类型必需与“strict_trans_tables”的sql_mode一并使用）。
+	2、SET（集合）类型最多允许64个值。
+	3、通过“sql_mode”参数可用于约束检查（见示例1），如果将“sql_mode”清空后再插入ENUM没有的字符则不会插入任何字符至表中（见示例2）。
+	4、集合类型的排序并不是按集合中元素进行排序，而是按集合中数组的顺序进行排序（见示例3）。
+		注意：如需按集合类型中的元素的顺序进行排序则需要将该列转换成“CHAR”类型（见示例4）.
+
+示例1：
+	mysql> CREATE TABLE t6 (user_name VARCHAR(30), sex ENUM('male','female'));
+	mysql> SET SQL_MODE='strict_trans_tables';
+	mysql> INSERT INTO t6 SELECT 'jim','male';
+	mysql> INSERT INTO t6 SELECT 'john','bimale';
+		1265 - Data truncated for column 'sex' at row 1
+
+示例2：
+	mysql> SET SQL_MODE='';
+	mysql> INSERT INTO t6 SELECT 'john','bimale';
+		Query OK, 1 row affected (0.06 sec)
+		Records: 1  Duplicates: 0  Warnings: 1
+	mysql> SHOW WARNINGS;
+		+---------+------+------------------------------------------+
+		| Level   | Code | Message                                  |
+		+---------+------+------------------------------------------+
+		| Warning | 1265 | Data truncated for column 'sex' at row 1 |
+		+---------+------+------------------------------------------+
+	mysql> SELECT * FROM t6;
+		+-----------+------+
+		| user_name | sex  |
+		+-----------+------+
+		| jim       | male |
+		| john      |      |
+		+-----------+------+
+
+示例3：
+	mysql> SELECT * FROM t6;
+		+-----------+--------+
+		| user_name | sex    |
+		+-----------+--------+
+		| jim       | male   |
+		| lucy      | female |
+		| john      | male   |
+		+-----------+--------+
+	mysql> SELECT * FROM t6 ORDER BY sex ASC;
+		+-----------+--------+
+		| user_name | sex    |
+		+-----------+--------+
+		| jim       | male   |
+		| john      | male   |
+		| lucy      | female |
+		+-----------+--------+
+
+示例4：
+	mysql> SELECT * FROM t6;
+		+-----------+--------+
+		| user_name | sex    |
+		+-----------+--------+
+		| jim       | male   |
+		| lucy      | female |
+		| john      | male   |
+		+-----------+--------+
+	mysql> SELECT * FROM t6 ORDER BY CAST(sex AS CHAR) ASC;
+		+-----------+--------+
+		| user_name | sex    |
+		+-----------+--------+
+		| lucy      | female |
+		| jim       | male   |
+		| john      | male   |
+		+-----------+--------+
+	mysql> SELECT * FROM t6 ORDER BY CONCAT(sex);
+		+-----------+--------+
+		| user_name | sex    |
+		+-----------+--------+
+		| lucy      | female |
+		| jim       | male   |
+		| john      | male   |
+		+-----------+--------+

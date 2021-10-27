@@ -1,0 +1,272 @@
+CREATE TABLE
+	1、表是关系型数据库的核心。
+	2、表=关系
+	3、表是记录的集合，而集合中的数据是无序的。
+	4、二维表格模型易于人类理解
+	5、MySQL默认存储引擎是基于行（记录）存储
+		列存储数据库的压缩效率比较高，适用于分析型的统计。
+	6、每行列都是基于列进行组织的。
+
+在MySQL中“schema”等同于“database”。
+
+语法1：
+	CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name (create_definition,...) [table_options] [partition_options]
+
+语法2：
+	CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name (create_definition,...) [table_options] [partition_options] [IGNORE | REPLACE] [AS] query_expression
+
+语法3：
+	CREATE [TEMPORARY] TABLE [IF NOT EXISTS] tbl_name { LIKE old_tbl_name | (LIKE old_tbl_name) }
+
+		TEMPORARY：如指定“temporary”则表示创建的是一个临时表，“temporary”临时表是用户的临时表即仅对当前会话生效，可用于在存储过程中存储临时数据，该表的表结构存储在变量“tmpdir”所定义的目录下，其数据是存放在“ibtmp*”的临时表空间中（临时表空间的属性由“innodb_temp_data_file_path”变量指定）。
+		
+		注意：“temporary”临时表所使用的存储引擎在建表的时候如未指定则由“default_tmp_storage_engine”变量指定。
+		注意：创建临时表所指定的表名不要与当前库中的其他已存在的表的表名重复，或在建表时加上“IF NOT EXISTS”。
+		注意：在mysql 5.5和mysql 5.6中“TEMPORARY”临时表的表结构定义文件和数据文件均存放在“tmpdir”变量所指定的目录下。
+	
+		IF NOT EXISTS：创建表进如该表名已存在则不会创建新的表。
+
+	create_definition: 创建时的定义，主要用于指定列的定义、索引等。
+		create_definition 语法1：
+	    	col_name column_definition [CONSTRAINT [symbol]] PRIMARY KEY [index_type] (key_part,...) [index_option] ...
+	    
+	    create_definition 语法2：
+	    	col_name column_definition {INDEX|KEY} [index_name] [index_type] (key_part,...) [index_option] ...
+	    
+	    create_definition 语法3：
+	    	col_name column_definition [CONSTRAINT [symbol]] UNIQUE [INDEX|KEY] [index_name] [index_type] (key_part,...) [index_option] ...
+	    
+	    create_definition 语法4：
+	    	col_name column_definition {FULLTEXT|SPATIAL} [INDEX|KEY] [index_name] (key_part,...) [index_option] ...
+	    
+	    create_definition 语法5：
+	    	col_name column_definition [CONSTRAINT [symbol]] FOREIGN KEY [index_name] (col_name,...) reference_definition
+
+	    create_definition 语法6：
+	    	col_name column_definition CHECK (expr)
+
+	    CONSTRAINT：用于指定引用键的名字。
+
+	column_definition: 指定字段的选项（如：自增长的起始值、主键、唯一键等）。
+		column_definition 语法1：
+		    data_type [NOT NULL | NULL] [DEFAULT default_value] [AUTO_INCREMENT] [UNIQUE [KEY]] [[PRIMARY] KEY] [COMMENT 'string'] [COLLATE collation_name] [COLUMN_FORMAT {FIXED|DYNAMIC|DEFAULT}] [STORAGE {DISK|MEMORY|DEFAULT}] [reference_definition]
+		
+		column_definition 语法2：
+			data_type [GENERATED ALWAYS] AS (expression) [VIRTUAL | STORED] [NOT NULL | NULL] [UNIQUE [KEY]] [[PRIMARY] KEY] [COMMENT 'string']
+
+		NOT NULL | NULL：指定该列是否允许空值。
+		DEFAULT：为该列指定一个默认值，当插入的记录在该字段为空时则会在这个字段插入这个默认值。
+	    AUTO_INCREMENT：指定该列为自增长的列。
+	    UNIQUE [KEY]：定义该字段是否为唯一键。
+	    [PRIMARY] KEY：定义该字段是否为主键。
+	    COMMENT 'string'：为该字段指定注释。
+	    COLUMN_FORMAT {FIXED|DYNAMIC|DEFAULT}：
+	    STORAGE {DISK|MEMORY|DEFAULT}：
+	    [GENERATED ALWAYS] AS：定义该列的数值来自于“expression”表达式的计算得来（见示例1）。
+	    VIRTUAL | STORED：指定创建的列是“VIRTUAL”还是“STORED”，如不指定为“VIRTUAL”或“STORED”则默认创建为“VIRTUAL”列；“VIRTUAL”表示该列的值是在查询时通过CPU计算得来，并且无法在“VIRTUAL”列上创建全文索引；“STORED”表示该列的数据会保存在磁盘上，可对“STORED”类型的列创建全文索引。
+
+	data_type:
+	    (see http://dev.mysql.com/doc/refman/5.7/en/data-types.html)
+
+	key_part:
+	    col_name [(length)] [ASC | DESC]
+
+	index_type:
+	    USING {BTREE | HASH}
+
+	index_option:
+	    KEY_BLOCK_SIZE [=] value | index_type | WITH PARSER parser_name | COMMENT 'string'
+
+	reference_definition:
+	    REFERENCES tbl_name (key_part,...) [MATCH FULL | MATCH PARTIAL | MATCH SIMPLE] [ON DELETE reference_option] [ON UPDATE reference_option]
+
+	    ON UPDATE reference_option：定义当数据更新时会执行的动作。
+
+	reference_option:
+	    RESTRICT | CASCADE | SET NULL | NO ACTION | SET DEFAULT
+
+		RESTRICT = NO ACTION：严格模式，被外键引用时，父表中的值如被子表所引用，则父表中的对应字段不允许更新（见示例2）。
+	    CASCADE：表示为级联更新模式。
+	    SET NULL：如父表中被引用的字段或更新则会将其设置为“NULL”。
+	    SET DEFAULT：如父表中被引用的字段或更新则会将其设置为建表时为字段定的默认值。
+
+	table_options:
+	    table_option [[,] table_option] ...
+
+	table_option:
+	    AUTO_INCREMENT [=] value
+	  | AVG_ROW_LENGTH [=] value
+	  | [DEFAULT] CHARACTER SET [=] charset_name
+	  | CHECKSUM [=] {0 | 1}
+	  | [DEFAULT] COLLATE [=] collation_name
+	  | COMMENT [=] 'string'
+	  | COMPRESSION [=] {'ZLIB'|'LZ4'|'NONE'}
+	  | CONNECTION [=] 'connect_string'
+	  | {DATA|INDEX} DIRECTORY [=] 'absolute path to directory'
+	  | DELAY_KEY_WRITE [=] {0 | 1}
+	  | ENCRYPTION [=] {'Y' | 'N'}
+	  | ENGINE [=] engine_name
+	  | INSERT_METHOD [=] { NO | FIRST | LAST }
+	  | KEY_BLOCK_SIZE [=] value
+	  | MAX_ROWS [=] value
+	  | MIN_ROWS [=] value
+	  | PACK_KEYS [=] {0 | 1 | DEFAULT}
+	  | PASSWORD [=] 'string'
+	  | ROW_FORMAT [=] {DEFAULT|DYNAMIC|FIXED|COMPRESSED|REDUNDANT|COMPACT}
+	  | STATS_AUTO_RECALC [=] {DEFAULT|0|1}
+	  | STATS_PERSISTENT [=] {DEFAULT|0|1}
+	  | STATS_SAMPLE_PAGES [=] value
+	  | TABLESPACE tablespace_name [STORAGE {DISK|MEMORY|DEFAULT}]
+	  | UNION [=] (tbl_name[,tbl_name]...)
+
+	partition_options: 指定分区选项。
+	    PARTITION BY
+	        { [LINEAR] HASH(expr)
+	        | [LINEAR] KEY [ALGORITHM={1|2}] (column_list)
+	        | RANGE{(expr) | COLUMNS(column_list)}
+	        | LIST{(expr) | COLUMNS(column_list)} }
+	    [PARTITIONS num]
+	    [SUBPARTITION BY
+	        { [LINEAR] HASH(expr)
+	        | [LINEAR] KEY [ALGORITHM={1|2}] (column_list) }
+	      [SUBPARTITIONS num]
+	    ]
+	    [(partition_definition [, partition_definition] ...)]
+
+	partition_definition:
+	    PARTITION partition_name
+	        [VALUES
+	            {LESS THAN {(expr | value_list) | MAXVALUE}
+	            |
+	            IN (value_list)}]
+	        [[STORAGE] ENGINE [=] engine_name]
+	        [COMMENT [=] 'string' ]
+	        [DATA DIRECTORY [=] 'data_dir']
+	        [INDEX DIRECTORY [=] 'index_dir']
+	        [MAX_ROWS [=] max_number_of_rows]
+	        [MIN_ROWS [=] min_number_of_rows]
+	        [TABLESPACE [=] tablespace_name]
+	        [(subpartition_definition [, subpartition_definition] ...)]
+
+	subpartition_definition:
+	    SUBPARTITION logical_name
+	        [[STORAGE] ENGINE [=] engine_name]
+	        [COMMENT [=] 'string' ]
+	        [DATA DIRECTORY [=] 'data_dir']
+	        [INDEX DIRECTORY [=] 'index_dir']
+	        [MAX_ROWS [=] max_number_of_rows]
+	        [MIN_ROWS [=] min_number_of_rows]
+	        [TABLESPACE [=] tablespace_name]
+
+	query_expression:
+	    SELECT ...   (Some valid select or union statement)
+
+
+示例1：
+	mysql> CREATE TABLE t3 (
+		-> id INT NOT NULL,
+		-> num INT GENERATED ALWAYS AS (id + 1) NOT NULL);
+	mysql> DESC t3;
+		+-------+---------+------+-----+---------+-------------------+
+		| Field | Type    | Null | Key | Default | Extra             |
+		+-------+---------+------+-----+---------+-------------------+
+		| id    | int(11) | NO   |     | NULL    |                   |
+		| num   | int(11) | NO   |     | NULL    | VIRTUAL GENERATED |
+		+-------+---------+------+-----+---------+-------------------+
+	mysql> INSERT INTO t3(id) VALUES (1),(2),(3);
+	mysql> SELECT * FROM t3;
+		+----+-----+
+		| id | num |
+		+----+-----+
+		|  1 |   2 |
+		|  2 |   3 |
+		|  3 |   4 |
+		+----+-----+
+
+示例2：
+	mysql> SHOW CREATE TABLE parent\G
+		*************************** 1. row ***************************
+		       Table: parent
+		Create Table: CREATE TABLE `parent` (
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+	mysql> SHOW CREATE TABLE child\G
+		*************************** 1. row ***************************
+		       Table: child
+		Create Table: CREATE TABLE `child` (
+		  `id` int(11) NOT NULL,
+		  `parent_id` int(11) DEFAULT NULL,
+		  KEY `par_index` (`parent_id`),
+		  CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+		) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+	mysql> UPDATE parent SET id=4 WHERE id=3;
+	mysql> SELECT * FROM parent;
+		+----+
+		| id |
+		+----+
+		|  4 |
+		|  5 |
+		+----+
+	mysql> SELECT * FROM child;
+		+----+-----------+
+		| id | parent_id |
+		+----+-----------+
+		|  1 |         5 |
+		|  3 |         5 |
+		+----+-----------+
+	mysql> DELETE FROM parent WHERE id=5;
+		ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`test1`.`child`, CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)
+	mysql> UPDATE parent SET id=1 WHERE id=5;
+		ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`test1`.`child`, CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)
+
+查看表结构：
+	语法1：
+		mysql> SHOW CREATE TABLE tb_name;
+
+			mysql> SHOW CREATE TABLE t2\G
+				*************************** 1. row ***************************
+				       Table: t2
+				Create Table: CREATE TABLE `t2` (
+				  `id` int(11) NOT NULL AUTO_INCREMENT,
+				  `data` json NOT NULL,
+				  `name` varchar(50) GENERATED ALWAYS AS (json_extract(`data`,'$.name')) STORED,
+				  PRIMARY KEY (`id`),
+				  KEY `name` (`name`)
+				) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=gbk
+
+	语法2：
+		mysql> SHOW TABLE STATUS [LIKE] 'tb_name';
+
+			mysql> SHOW TABLE STATUS LIKE 't2'\G
+				*************************** 1. row ***************************
+				           Name: t2
+				         Engine: InnoDB
+				        Version: 10
+				     Row_format: Dynamic
+				           Rows: 4
+				 Avg_row_length: 4096
+				    Data_length: 16384
+				Max_data_length: 0
+				   Index_length: 0
+				      Data_free: 0
+				 Auto_increment: 5
+				    Create_time: 2019-07-31 12:52:56
+				    Update_time: 2019-07-31 14:52:57
+				     Check_time: NULL
+				      Collation: gbk_chinese_ci
+				       Checksum: NULL
+				 Create_options: 
+				        Comment: 
+
+	语法3：
+		mysql> DESC tb_name;
+
+			mysql> DESC t2;
+				+-------+-------------+------+-----+---------+------------------+
+				| Field | Type        | Null | Key | Default | Extra            |
+				+-------+-------------+------+-----+---------+------------------+
+				| id    | int(11)     | NO   | PRI | NULL    | auto_increment   |
+				| data  | json        | NO   |     | NULL    |                  |
+				| name  | varchar(50) | YES  | MUL | NULL    | STORED GENERATED |
+				+-------+-------------+------+-----+---------+------------------+

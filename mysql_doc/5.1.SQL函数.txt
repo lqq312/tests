@@ -1,0 +1,235 @@
+SQL函数
+
+CAST()：将某个列的值转换成指定类型的值。
+    mysql> SELECT * FROM t6 ORDER BY CAST(sex AS CHAR) ASC;
+
+CONCAT()：用于连接字符串，其返回值即为字符串类型。
+    mysql> SELECT * FROM t6 ORDER BY CONCAT(sex);
+    mysql> SELECT CONCAT("lu","qing","qing");
+        +----------------------------+
+        | CONCAT("lu","qing","qing") |
+        +----------------------------+
+        | luqingqing                 |
+        +----------------------------+
+
+与JSON类型相关的函数：
+    JSON_TYPE()：用于检查JSON数据的类型是数组、字符串还是数值等。
+        mysql> SELECT JSON_TYPE('["A","b",1]');
+            +--------------------------+
+            | JSON_TYPE('["A","b",1]') |
+            +--------------------------+
+            | ARRAY                    |
+            +--------------------------+
+        mysql> SELECT JSON_TYPE("TEST");
+            Invalid JSON text in argument 1 to function json_type: "Invalid value." at position 0.
+        mysql> SELECT JSON_TYPE('test');
+            Invalid JSON text in argument 1 to function json_type: "Invalid value." at position 1.
+        mysql> SELECT JSON_TYPE('"test"');
+            +---------------------+
+            | JSON_TYPE('"test"') |
+            +---------------------+
+            | STRING              |
+            +---------------------+
+            注意：MySQL使用utf8mb4字符集和utf8mb4_bin排序规则处理JSON上下文中使用的字符串。其他字符集中的字符串将根据需要转换为utf8mb4（对于ascii或utf8字符集中的字符串，不需要转换，因为ascii和utf8是utf8mb4的子集）。
+        mysql> SELECT JSON_TYPE('1');
+            +----------------+
+            | JSON_TYPE('1') |
+            +----------------+
+            | INTEGER        |
+            +----------------+
+        mysql> SELECT JSON_TYPE('{}');
+            +-----------------+
+            | JSON_TYPE('{}') |
+            +-----------------+
+            | OBJECT          |
+            +-----------------+
+
+    JSON_OBJECT()：将关系型数据库中的列展示为JSON格式的数据。
+        mysql> CREATE TABLE t10 (
+            -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            -> name VARCHAR ( 30 ) NOT NULL,
+            -> email VARCHAR ( 50 ),
+            -> address VARCHAR ( 50 )) ENGINE = INNODB AUTO_INCREMENT = 1;
+        mysql> INSERT INTO t10 VALUES
+            -> ( NULL, "tom", "tom@beadwallet.com", "beijing" ),
+            -> ( NULL, "jerry", "jerry@beadwallet.com", "WuHan" ),
+            -> ( NULL, "lucy", "lucy@123.com", "beijing" );
+        mysql>  SELECT * FROM t10;
+            +----+-------+----------------------+---------+
+            | id | name  | email                | address |
+            +----+-------+----------------------+---------+
+            |  1 | tom   | tom@beadwallet.com   | beijing |
+            |  2 | jerry | jerry@beadwallet.com | WuHan   |
+            |  3 | lucy  | lucy@123.com         | beijing |
+            +----+-------+----------------------+---------+
+        mysql> SELECT id,JSON_OBJECT('name',name,'email',email,'address',address) AS data FROM t10;
+            +----+------------------------------------------------------------------------+
+            | id | data                                                                   |
+            +----+------------------------------------------------------------------------+
+            |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   |
+            |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} |
+            |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        |
+            +----+------------------------------------------------------------------------+
+
+    JSON_APPEND()
+
+    JSON_ARRAY_APPEND(json_doc, path, val[, path, val] ...)：将值附加到数组的末尾。
+        mysql> SELECT * FROM t11;
+            +----+-------------------------------------------------------------------------------------------+
+            | id | data                                                                                      |
+            +----+-------------------------------------------------------------------------------------------+
+            |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing", "address2": "HuBei"} |
+            |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"}                    |
+            |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}                           |
+            +----+-------------------------------------------------------------------------------------------+
+
+        mysql> UPDATE t11 
+            -> SET DATA = JSON_ARRAY_APPEND
+            -> (DATA, '$.address2', JSON_EXTRACT( DATA, '$.address' )) 
+            -> WHERE JSON_EXTRACT( DATA, '$.address2' ) IS NOT NULL AND id > 0;
+                Query OK, 1 row affected (0.07 sec)
+                Rows matched: 1  Changed: 1  Warnings: 0
+
+        mysql> SELECT * FROM t11;
+            +----+--------------------------------------------------------------------------------------------------------+
+            | id | data                                                                                                   |
+            +----+--------------------------------------------------------------------------------------------------------+
+            |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing", "address2": ["HuBei", "beijing"]} |
+            |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"}                                 |
+            |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}                                        |
+            +----+--------------------------------------------------------------------------------------------------------+
+
+    JSON_INSERT(json_doc, path, val[, path, val] ...)：将数据插入JSON文档。
+        mysql> SELECT * FROM t9;
+            +-----+----------------------------------------------------------------------------------------------+
+            | uid | data                                                                                         |
+            +-----+----------------------------------------------------------------------------------------------+
+            |   1 | {"age": "20", "mail": "david@beadlwallet.com", "name": "David", "address": "XXXX road XXX "} |
+            |   2 | {"mail": "tom@beadwallet.com", "name": "tom"}                                                |
+            +-----+----------------------------------------------------------------------------------------------+
+        mysql> UPDATE t9 
+            -> SET DATA = JSON_INSERT( DATA, "$.address2", "hubei" ) 
+            -> WHERE
+            -> JSON_EXTRACT( DATA, '$.name' ) = "David";
+        mysql> SELECT * FROM t9;
+            +-----+-------------------------------------------------------------------------------------------------------------------+
+            | uid | data                                                                                                              |
+            +-----+-------------------------------------------------------------------------------------------------------------------+
+            |   1 | {"age": "20", "mail": "david@beadlwallet.com", "name": "David", "address": "XXXX road XXX ", "address2": "hubei"} |
+            |   2 | {"mail": "tom@beadwallet.com", "name": "tom"}                                                                     |
+            +-----+-------------------------------------------------------------------------------------------------------------------+
+
+    JSON_CONTAINS_KEY()
+
+    JSON_EXTRACT(JSON_DOC, JSON_PATH)：获取JSON类型数据的指定“Field”的值。
+        示例1：
+            mysql> SELECT JSON_EXTRACT('[10, 20, [30, 40]]','$[2]');
+                +-------------------------------------------+
+                | JSON_EXTRACT('[10, 20, [30, 40]]','$[2]') |
+                +-------------------------------------------+
+                | [30, 40]                                  |
+                +-------------------------------------------+
+            mysql> SELECT JSON_EXTRACT('[10, 20, [30, 40]]','$[2][*]');
+                +----------------------------------------------+
+                | JSON_EXTRACT('[10, 20, [30, 40]]','$[2][*]') |
+                +----------------------------------------------+
+                | [30, 40]                                     |
+                +----------------------------------------------+
+            mysql> SELECT JSON_EXTRACT('[10, 20, [30, 40]]','$[2][1]');
+                +----------------------------------------------+
+                | JSON_EXTRACT('[10, 20, [30, 40]]','$[2][1]') |
+                +----------------------------------------------+
+                | 40                                           |
+                +----------------------------------------------+
+
+        示例2：
+            mysql> CREATE TABLE UserJson (
+                -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                -> data JSON) ENGINE=InnoDB AUTO_INCREMENT=0;
+            mysql> TRUNCATE TABLE UserJson;
+            mysql> INSERT INTO UserJson SELECT id,JSON_OBJECT('name',name,'email',email,'address',address) AS data FROM t10;
+            mysql> SELECT * FROM UserJson;
+                +----+------------------------------------------------------------------------+
+                | id | data                                                                   |
+                +----+------------------------------------------------------------------------+
+                |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   |
+                |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} |
+                |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        |
+                +----+------------------------------------------------------------------------+
+            mysql> SELECT JSON_EXTRACT(data, '$.name') FROM UserJson;
+                +------------------------------+
+                | JSON_EXTRACT(data, '$.name') |
+                +------------------------------+
+                | "tom"                        |
+                | "jerry"                      |
+                | "lucy"                       |
+                +------------------------------+
+
+            示例3：
+                mysql> SELECT * FROM t9;
+                    +-----+----------------------------------------------------------------------------------------------+
+                    | uid | data                                                                                         |
+                    +-----+----------------------------------------------------------------------------------------------+
+                    |   1 | {"age": "20", "mail": "david@beadlwallet.com", "name": "David", "address": "XXXX road XXX "} |
+                    |   2 | {"mail": "tom@beadwallet.com", "name": "tom"}                                                |
+                    +-----+----------------------------------------------------------------------------------------------+
+                mysql> SELECT * FROM t9 WHERE JSON_EXTRACT(data, '$.name') = "tom";
+                    +-----+-----------------------------------------------+
+                    | uid | data                                          |
+                    +-----+-----------------------------------------------+
+                    |   2 | {"mail": "tom@beadwallet.com", "name": "tom"} |
+                    +-----+-----------------------------------------------+
+
+    JSON_MERGE(json_doc, json_doc[, json_doc] ...)：合并多个JSON文档，该函数等同于JSON_MERGE_PRESERVE()。
+        mysql> SELECT * FROM UserJson;
+            +----+---------------------------------------------------------------------------------------------+
+            | id | data                                                                                        |
+            +----+---------------------------------------------------------------------------------------------+
+            |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing", "address2": "HuBei"}   |
+            |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan", "address2": "HuBei"} |
+            |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing", "address2": "HuBei"}        |
+            +----+---------------------------------------------------------------------------------------------+
+        mysql> SELECT
+            -> JSON_MERGE (
+            -> JSON_EXTRACT( DATA, '$.name' ),
+            -> JSON_EXTRACT( DATA, '$.address' ),
+            -> JSON_EXTRACT( DATA, '$.address2' )) 
+            -> FROM UserJson WHERE id = 1;
+            +-------------------------------------------------------------------------------------------------------------+
+            | JSON_MERGE(JSON_EXTRACT(data, '$.name'), JSON_EXTRACT(data, '$.address'), JSON_EXTRACT(data, '$.address2')) |
+            +-------------------------------------------------------------------------------------------------------------+
+            | ["tom", "beijing", "HuBei"]                                                                                 |
+            +-------------------------------------------------------------------------------------------------------------+
+
+    JSON_REMOVE(json_doc, path[, path] ...)：从JSON文档中删除数据，如果json_doc不是有效的JSON文档或path不是有效的路径表达式或是“$”或包含“*”或“**”通配符，则会发生错误。
+        mysql> SELECT * FROM t11;
+            +----+--------------------------------------------------------------------------------------------------------+
+            | id | data                                                                                                   |
+            +----+--------------------------------------------------------------------------------------------------------+
+            |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing", "address2": ["HuBei", "beijing"]} |
+            |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"}                                 |
+            |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}                                        |
+            +----+--------------------------------------------------------------------------------------------------------+
+ 
+        mysql> UPDATE t11 SET data = JSON_REMOVE(data, '$.address2') WHERE JSON_EXTRACT(data, '$.address2') IS NOT NULL;
+            Query OK, 1 row affected (0.05 sec)
+            Rows matched: 1  Changed: 1  Warnings: 0
+ 
+        mysql> SELECT * FROM t11;
+            +----+------------------------------------------------------------------------+
+            | id | data                                                                   |
+            +----+------------------------------------------------------------------------+
+            |  1 | {"name": "tom", "email": "tom@beadwallet.com", "address": "beijing"}   |
+            |  2 | {"name": "jerry", "email": "jerry@beadwallet.com", "address": "WuHan"} |
+            |  3 | {"name": "lucy", "email": "lucy@123.com", "address": "beijing"}        |
+            +----+------------------------------------------------------------------------+
+
+    JSON_REPLACE()
+
+    JSON_SEARCH()
+
+    JSON_SET()
+
+    JSON_TEST_PARSER()
+
+    JSON_VALID()

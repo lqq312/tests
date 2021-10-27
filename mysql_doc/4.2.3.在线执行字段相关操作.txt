@@ -1,0 +1,78 @@
+字段级别在线操作：
+	1、添加字段
+	2、删除字段
+	3、重命名字段
+	4、对列进行重新排序
+	5、设置字段的默认值
+	6、修改字段的数据类型
+	7、扩展“VARCHAR”类型字段的列大小
+	8、删除字段默认值
+	9、修改自增长的值
+	10、使字段为“NULL”
+	11、使字段为“NOT NULL”
+	12、修改“ENUM”或“SET”字段的定义
+
+	+---------------------------------------------------+----------+----------------+------------------------+------------------------+
+	|                    Operation                      | In Place | Rebuilds Table | Permits Concurrent DML | Only Modifies Metadata |
+	+---------------------------------------------------+----------+----------------+------------------------+------------------------+
+	| Adding a column                                   | Yes      | Yes            | Yes *                  | No                     |
+	| Dropping a column                                 | Yes      | Yes            | Yes                    | No                     |
+	| Renaming a column                                 | Yes      | No             | Yes *                  | Yes                    |
+	| Reordering columns                                | Yes      | Yes            | Yes                    | No                     |
+	| Setting a column default value                    | Yes      | No             | Yes                    | Yes                    |
+	| Changing the column data type                     | No       | Yes            | No                     | No                     |
+	| Extending VARCHAR column size                     | Yes      | No             | Yes                    | Yes                    |
+	| Dropping the column default value                 | Yes      | No             | Yes                    | Yes                    |
+	| Changing the auto_increment value                 | Yes      | No             | Yes                    | No *                   |
+	| Making a column NULL                              | Yes      | Yes *          | Yes                    | No                     |
+	| Making a column NOT NULL                          | Yes *    | Yes *          | Yes                    | No                     |
+	| Modifying the definition of an ENUM or SET column | Yes      | No             | Yes                    | Yes                    |
+	+---------------------------------------------------+----------+----------------+------------------------+------------------------+
+
+添加字段：
+	语法：
+		ALTER TABLE tbl_name ADD COLUMN column_name column_definition, ALGORITHM=INPLACE, LOCK=NONE;
+
+删除字段：
+	语法：
+		ALTER TABLE tbl_name DROP COLUMN column_name, ALGORITHM=INPLACE, LOCK=NONE;
+
+字段重命名：
+	语法：
+		ALTER TABLE tbl CHANGE old_col_name new_col_name data_type, ALGORITHM=INPLACE, LOCK=NONE;
+
+对列进行重新排序：
+	语法：
+		ALTER TABLE tbl_name MODIFY COLUMN col_name column_definition FIRST, ALGORITHM=INPLACE, LOCK=NONE;
+
+修改字段的数据类型：
+	语法：
+		ALTER TABLE tbl_name CHANGE c1 c1 BIGINT, ALGORITHM=COPY;
+
+扩展“VARCHAR”字段的大小：
+	语法：
+		ALTER TABLE tbl_name CHANGE COLUMN c1 c1 VARCHAR(255), ALGORITHM=INPLACE, LOCK=NONE;
+
+设置字段的默认值：
+	语法：
+		ALTER TABLE tbl_name ALTER COLUMN col SET DEFAULT literal, ALGORITHM=INPLACE, LOCK=NONE;
+
+删除字段默认值：
+	语法：
+		ALTER TABLE tbl ALTER COLUMN col DROP DEFAULT, ALGORITHM=INPLACE, LOCK=NONE;
+
+修改“AUTO_INCREMENT”的值：
+	语法：
+		ALTER TABLE table AUTO_INCREMENT=next_value, ALGORITHM=INPLACE, LOCK=NONE;
+
+使字段为“NULL”：
+	语法：
+		ALTER TABLE tbl_name MODIFY COLUMN column_name data_type NULL, ALGORITHM=INPLACE, LOCK=NONE;
+
+使字段为“NOT NULL”：
+	语法：
+		ALTER TABLE tbl_name MODIFY COLUMN column_name data_type NOT NULL, ALGORITHM=INPLACE, LOCK=NONE;
+
+修改“ENUM”和“SET”字段的定义：
+	语法：
+		CREATE TABLE t1 (c1 ENUM('a', 'b', 'c')); ALTER TABLE t1 MODIFY COLUMN c1 ENUM('a', 'b', 'c', 'd'), ALGORITHM=INPLACE, LOCK=NONE;

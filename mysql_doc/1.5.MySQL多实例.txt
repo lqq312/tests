@@ -1,0 +1,97 @@
+MySQL多实例：
+	1、一台服务器上安装多个MySQL实例。
+	2、充分利用硬件资源。
+	3、通过mysqld_multi程序即可。
+
+多实例安装注意事项：
+	1、port、datadir和socket必须分别指定，每个实例一个独有的配置。
+		注意：如共用同一个配置文件，在“[mysqld]”下定义的配置会继承给所有其他的实例，而在实例中定义的配置会替换公共的配置中的定义。
+	2、 mysql多实例可分别配置其配置文件，也可以单独指定配置文件即每实例一个配置文件。
+
+共享配置文件的多实例方案：
+	1、环境准备
+		# groupadd -r mysql
+		# useradd -r -g mysql -d /usr/local/mysql -s /sbin/nologin mysql
+		# id mysql
+		# wget http://172.16.100.2/source_code_package/mysql/mysql-5.7.19-linux-glibc2.12-x86_64.tar.gz -P /tmp
+		# tar axf /tmp/mysql-5.7.19-linux-glibc2.12-x86_64.tar.gz  -C /usr/local
+		# cd /usr/local
+		# ln -s mysql-5.7.19-linux-glibc2.12-x86_64 mysql
+		# chown -R mysql.mysql mysql*
+		# mkdir -pv /multi_mysql/{mysql1,mysql2,mysql3}/{data,run,logs}
+		# touch /multi_mysql/mysql1/logs/mysql1.err
+		# touch /multi_mysql/mysql2/logs/mysql2.err
+		# touch /multi_mysql/mysql3/logs/mysql3.err
+		# chown -R mysql.mysql /multi_mysql
+		
+	2、创建各实例的配置文件并创建配置文件并执行数据库的初始化（建议在配置文件中关闭“performance_schema”，因为每个“performance_schema”会占用400M内存）
+		# vim /etc/my.cnf
+			[mysqld_multi]
+			mysqld=/usr/local/mysql/bin/mysqld_safe
+			mysqladmin=/usr/local/mysql/bin/mysqladmin
+			log=/multi_mysql/multi_mysql.log
+			
+			[mysqld1]
+			basedir=
+			datadir=/multi_mysql/mysql1/data
+			port=3331
+			socket=/multi_mysql/mysql1/run/mysql1.sock
+			pid_file=/multi_mysql/mysql1/run/mysql1.pid
+			log_error=/multi_mysql/mysql1/logs/mysql1.err
+			user=mysql
+			server_id=11
+			performance_schema=0
+			innodb_buffer_pool_size=32M
+			bind_address=0.0.0.0
+			skip_name_resolve=1
+			
+			[mysqld2]
+			basedir=
+			datadir=/multi_mysql/mysql2/data
+			port=3332
+			socket=/multi_mysql/mysql2/run/mysql2.sock
+			pid_file=/multi_mysql/mysql2/run/mysql2.pid
+			log_error=/multi_mysql/mysql2/logs/mysql2.err
+			user=mysql
+			server_id=21
+			performance_schema=0
+			innodb_buffer_pool_size=32M
+			bind_address=0.0.0.0
+			skip_name_resolve=1
+			
+			[mysqld3]
+			basedir=
+			datadir=/multi_mysql/mysql3/data
+			port=3333
+			socket=/multi_mysql/mysql3/run/mysql3.sock
+			pid_file=/multi_mysql/mysql3/run/mysql3.pid
+			log_error=/multi_mysql/mysql3/logs/mysql3.err
+			user=mysql
+			server_id=31
+			performance_schema=0
+			innodb_buffer_pool_size=32M
+			bind_address=0.0.0.0
+			skip_name_resolve=1
+			注意：如果在配置文件中没有定义“[mysqld_multi]”字段，在启动时就不会通过“mysqld_safe”的方式进行启动。
+		# echo "export PATH=/usr/local/mysql/bin:$PATH" > /etc/profile.d/mysqld.sh
+		# source /etc/profile.d/mysqld.sh
+		# mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/multi_mysql/mysql1/data
+		# mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/multi_mysql/mysql2/data
+		# mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/multi_mysql/mysql3/data
+		# vim /root/.my.cnf
+			[client]
+			user=root
+			password=redhat
+	
+	3、启动单个实例
+		# mysqld_multi start 1
+		# mysqld_multi report
+		# mysql -u root -p.DKS7n:Q#P5p -S /multi_mysql/mysql1/run/mysql1.sock
+
+	4、修改mysqld_multi脚本（在“my_print_defaults” 加上“-s”即可实现服务关闭）
+		# vim /usr/local/mysql/bin/mysqld_multi
+			my $com= join ' ', 'my_print_defaults -s', @defaults_options, $group;
+		# mysqld_multi stop 1
+
+独有配置文件的多实例方案：
+	

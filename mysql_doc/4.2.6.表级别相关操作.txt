@@ -1,0 +1,51 @@
+表级别相关操作
+
+	+-------------------------------------+----------+----------------+------------------------+------------------------+
+	|               Operation             | In Place | Rebuilds Table | Permits Concurrent DML | Only Modifies Metadata |
+	+-------------------------------------+----------+----------------+------------------------+------------------------+
+	| Changing the ROW_FORMAT             | Yes      | Yes            | Yes                    | No                     |
+	| Changing the KEY_BLOCK_SIZE         | Yes      | Yes            | Yes                    | No                     |
+	| Setting persistent table statistics | Yes      | No             | Yes                    | Yes                    |
+	| Specifying a character set          | Yes      | Yes *          | No                     | No                     |
+	| Converting a character set          | No       | Yes *          | No                     | No                     |
+	| Optimizing a table                  | Yes *    | Yes            | Yes                    | No                     |
+	| Rebuilding with the FORCE option    | Yes *    | Yes            | Yes                    | No                     |
+	| Performing a null rebuild           | Yes *    | Yes            | Yes                    | No                     |
+	| Renaming a table                    | Yes      | No             | Yes                    | Yes                    |
+	+-------------------------------------+----------+----------------+------------------------+------------------------+
+
+修改“ROW_FORMAT”：
+	语法：
+		ALTER TABLE tbl_name ROW_FORMAT = row_format, ALGORITHM=INPLACE, LOCK=NONE;
+
+修改“KEY_BLOCK_SIZE”：
+	语法：
+		ALTER TABLE tbl_name KEY_BLOCK_SIZE = value, ALGORITHM=INPLACE, LOCK=NONE;
+
+设置持久的表统计选项：
+	语法：
+		ALTER TABLE tbl_name STATS_PERSISTENT=0, STATS_SAMPLE_PAGES=20, STATS_AUTO_RECALC=1, ALGORITHM=INPLACE, LOCK=NONE;
+
+指定字符集：
+	语法：
+		ALTER TABLE tbl_name CHARACTER SET = charset_name, ALGORITHM=INPLACE, LOCK=NONE;
+
+转换字符集：
+	语法：
+		ALTER TABLE tbl_name CONVERT TO CHARACTER SET charset_name, ALGORITHM=COPY;
+
+优化表格：
+	语法：
+		OPTIMIZE TABLE tbl_name;
+
+使用“FORCE”选项重建表格：
+	语法：
+		ALTER TABLE tbl_name FORCE, ALGORITHM=INPLACE, LOCK=NONE;
+
+执行“NULL”重建：
+	语法：
+		ALTER TABLE tbl_name ENGINE=InnoDB, ALGORITHM=INPLACE, LOCK=NONE;
+
+表格重命名：
+	语法：
+		ALTER TABLE old_tbl_name RENAME TO new_tbl_name, ALGORITHM=INPLACE, LOCK=NONE;

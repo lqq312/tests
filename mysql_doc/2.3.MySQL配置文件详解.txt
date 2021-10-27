@@ -1,0 +1,65 @@
+mysql配置文件详解：
+	mysql服务的参数分为global即全局参数和session即会话级参数。
+
+查看mysql的参数：
+	1、通过查看/etc/my.cnf查看当前实例的参数。
+	2、登陆数据库后通过“show variables;”来查看当前实例的所有参数。
+	3、如需查看包含某些字符串的参数可使用如下命令：
+		mysql> show [global|session] variables [like "%innodb%" | where expr];
+		
+	4、查看指定变量的值：
+		mysql> select @@VARIABLE_NAME;
+
+	5、如果某些变量即是全局变量又是会话级变量，可使用如下方式查看不同级别的参数的值：
+		mysql> select @@global.VARIABLE_NAME;
+		mysql> select @@session.VARIABLE_NAME;
+
+	6、mysql的参数可分为只读参数和非只读参数，用户可在线修改非只读参数而只读参数只能通过修改配置文件交重启才能生效。
+
+修改mysql的参数：
+	不是所有的mysql参数都能进行修改的，对支持修改的参数可使用如下命令进行修改：
+		1、修改全局参数，仅对此后的新连接有效，对当前已连接的会话不生效。
+			mysql> set global VARIABLE_NAME=VAULE;
+
+		2、修改会话级参数，仅对当前会话有效；
+			mysql> set session VARIABLE_NAME=VALUE;
+
+	注意：在设置参数的值的时候如没有指定“global”或“session”时默认设置的是“session”，仅对当前会话有效。
+
+使用命令的方式修改的参数的值重启后会失效，如需永久生效需在配置文件中定义。
+
+注意：在配置文件中可以使用“include”字段将其他的配置引入至当前的配置文件中。
+
+[mysqld]
+	federated：无对应值，可定义MySQL实例开启“Federated”存储引擎。
+	autocommit：定义是否自动提交，bool值，同为“session”和“global”级别变量。
+	default_storage_engine=<innodb|myisam|...>：定义默认存储引擎。
+	log_error=/path/to/mysql.err：定义错误日志的路径和文件名。
+	default_storage_engine：定义默认使用的存储引擎。
+	default_tmp_storage_engine：指定临时表所使用的存储引擎。
+	tmpdir：用于存储临时文件，包括“tempoary”临时表的表结构文件。
+	sql_safe_updates=<ON|OFF>：限定在“UPDATE”时如果没有一并使用“LIMIT”子句或“WHERE”子句时拒绝进行“UPDATE”操作从而保证表中的数据的安全性。
+
+	############# slow log #############
+	slow_query_log = 1：定义是否开启慢查询日志。
+	slow_query_log_file =  /database/mysql5.7/logs/mysql.slow：定义慢查询日志的“path”和文件名。
+	log_queries_not_using_indexes = 1：定义是否将未使用索引的查询记录到慢查询日志中。
+	log_slow_admin_statements = 1：定义是否将管理类操作，如“ALTER”/“ANALYZE TABLE”/“check table”/“create index”/“drop index”/“optimize table”/“repair table”。
+	log_slow_slave_statements = 1：定义是否记录从库上执行的慢查询语句。
+	log_throttle_queries_not_using_indexes = 10：限制每分钟记录没有使用索引的SQL语句的次数。
+	expire_logs_days = 90：
+	long_query_time = 2
+	min_examined_row_limit = 100
+
+	############# innodb setting #############
+	innodb_buffer_pool_size： 用于存放InnoDB数据页、索引数据、脏页（即缓冲数据，在内存中修改而尚未刷新至磁盘的数据）以用自适应的哈希索引和行锁等（默认为128M即134217728），可以将缓冲池大小设置为服务器物理内存的80%。
+	innodb_temp_data_file_path：定义临时表空间的文件名、大小等属性，该文件默认存储在数据目录（由“datadir”变量定义的）下。
+
+[mysqld_safe]
+	syslog：定义将mysql的错误日志存储到系统日志文件中（需要与“syslog_tag”变量一并定义）。
+	syslog_tag=stock #mysqld_stock：在系统日志文件中定义与“MySQL”相关的日志的“tag”。
+
+[client]
+	user：指定mysql客户端工具使用哪个用户的身份登陆数据库。
+	password：指定mysql客户端登陆密码。
+	host：指定mysql客户端工具要登陆的主机。

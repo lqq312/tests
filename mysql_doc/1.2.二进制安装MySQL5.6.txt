@@ -1,0 +1,100 @@
+二进制安装MySQL5.6
+
+	1. 解决MySQL系统依赖
+		# yum search libaio autoconf
+		# yum -y install libaio autoconf
+			libaio：实现异步I/O的库；
+			autoconf：在“BASH”下制作供编译、安装和打包软件的配置脚本的工具。
+
+	2. 创建mysql的系统组和系统用户
+		# groupadd -r mysql
+		# useradd -r -s /bin/false -g mysql -d /usr/local/mysql mysql
+
+	3. 下载mysql5.6的二进制安装包并解压至指定目录
+		# wget http://192.168.3.199/softwares/mysql/mysql-5.6.44-linux-glibc2.12-x86_64.tar.gz -P /tmp
+		# tar axf /tmp/mysql-5.6.44-linux-glibc2.12-x86_64.tar.gz -C /usr/local
+		# ln -sv /usr/local/mysql-5.6.44-linux-glibc2.12-x86_64 /usr/local/mysql
+
+	4. 创建数据目录后修改mysql家目录与数据目录的属主和属组
+		# mkdir -pv /database/mysql5.6/{data,binlogs,undologs,logs,run}
+		# mount /dev/database/data /database/mysql5.6/data
+		# mount /dev/database/binlogs /database/mysql5.6/binlogs
+		# chown -R mysql.mysql /database/mysql5.6
+		# chown -R mysql.mysql /usr/local/mysql*
+
+	5. 导出mysql的头文件、库文件并修改PATH环境变量
+		# echo "export PATH=/usr/local/mysql/bin:$PATH" >> /etc/profile.d/mysql.sh
+		# source /etc/profile.d/mysql.sh
+		# ln -sv /usr/local/mysql/include /usr/include/mysql.conf
+		# echo "/usr/local/mysql/lib" >> /etc/ld.so.conf.d/mysqld
+		# ldconfig
+		# ldconfig -p | grep mysql
+
+	6. 创建mysql的配置文件和服务管理文件
+		# vim /etc/my.cnf
+			[client]
+			socket=/database/mysql5.6/run/mysqld.sock
+			
+			[mysql]
+			prompt=(\\U) [\\d]>\\_
+			
+			[mysqld]
+			############# basic settings #############
+			server-id=11
+			port=3306
+			user=mysql
+			pid-file=/database/mysql5.6/run/mysqld.pid
+			character_set_server=utf8mb4
+			skip_name_resolve = 1
+			datadir=/database/mysql5.6/data
+			lower_case_table_names=1
+			
+			############# replication settings #############
+			log_bin =  /database/mysql5.6/binlogs/master
+			#gtid_mode = on
+			#enforce_gtid_consistency = on
+			
+			############# log settings #############
+			log_error=/database/mysql5.6/logs/mysql.err
+			slow_query_log=1
+			slow_query_log_file=/database/mysql5.6/logs/mysql.slow
+			log_queries_not_using_indexes=1
+			log_slow_admin_statements=1
+			log_slow_slave_statements=1
+			log_throttle_queries_not_using_indexes=10
+			expire_logs_days=90
+			long_query_time=5
+			min_examined_row_limit=20
+			
+			[mysqld_safe]
+			socket=/database/mysql5.6/run/mysqld.sock
+			log-error=/database/mysql5.6/logs/mysql.err
+		# vim /etc/systemd/system/mysqld.service
+			[Unit]
+			Description=MySQL database server 
+			After=syslog.target
+			After=network.target
+			
+			[Service]
+			Type=simple
+			User=mysql
+			Group=mysql
+			ExecStart=/usr/local/mysql/bin/mysqld_safe --defaults-file=/etc/my.cnf
+			
+			[Install]
+			WantedBy=multi-user.target
+		# systemctl daemon-reload
+
+	7. 执行数据初始化脚本、启动服务并修改默认的root密码
+		# cd /usr/local/mysql
+		# ./scripts/mysql_install_db --user=mysql --basedir=/usr/local/mysql --datadir=/database/mysql5.6/data --defaults-file=/etc/my.cnf
+		# systemctl enable mysqld
+		# systemctl start mysqld
+		# mysql -uroot -hlocalhost
+		mysql> grant all privileges on *.* to "root"@"localhost" identified by "redhat" with grant option;
+		mysql> flush privileges;
+		mysql> exit
+
+		mysql5.6设置密码也可使用如下语句：
+			mysql> set password=password("redhat");
+	注意：mysql5.6在系统初始化时需开启autocommit，即“autocommit = 1”

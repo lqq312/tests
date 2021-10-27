@@ -1,0 +1,22 @@
+REPLACE
+
+语法1：
+    REPLACE [LOW_PRIORITY | DELAYED] [INTO] tbl_name [PARTITION (partition_name [, partition_name] ...)] [(col_name [, col_name] ...)] {VALUES | VALUE} (value_list) [, (value_list)] ...
+
+语法2：
+    REPLACE [LOW_PRIORITY | DELAYED] [INTO] tbl_name [PARTITION (partition_name [, partition_name] ...)] SET assignment_list
+
+语法3：
+    REPLACE [LOW_PRIORITY | DELAYED] [INTO] tbl_name [PARTITION (partition_name [, partition_name] ...)] [(col_name [, col_name] ...)] SELECT ...
+
+    value:
+        {expr | DEFAULT}
+
+    value_list:
+        value [, value] ...
+
+    assignment:
+        col_name = value
+
+    assignment_list:
+        assignment [, assignment] ...

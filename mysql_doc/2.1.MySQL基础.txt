@@ -1,0 +1,69 @@
+MySQL的配置文件：
+	1、MySQL的配置文件支持使用标签的形式在一个配置文件中保存多个不同版本的实例的配置，如下所示。
+		[mysqld571]
+		...
+		...
+		[mysqld572]
+		...
+		...
+		[mysqld561]
+		...
+		...
+
+		详细示例可参见MySQL多实例的配置。
+
+	2、MySQL读取配置文件的顺序
+		# mysqld --help -vv | grep my.cnf
+			/etc/my.cnf ==> /etc/mysql/my.cnf ==> /usr/local/mysql/etc/my.cnf ==> ~/.my.cnf
+
+		注意：如果在多个配置文件的相同字段下配置了相同的参数，则后面的配置会覆盖前面的配置。
+
+	3、查看MySQL的默认参数
+		# mysqld --verbose --help | less
+
+mysql命令行
+	1、在mysql命令行中的特殊操作符。
+		?         (\?) Synonym for `help'.
+		clear     (\c) Clear the current input statement.
+		connect   (\r) Reconnect to the server. Optional arguments are db and host.
+		delimiter (\d) Set statement delimiter.
+		edit      (\e) Edit command with $EDITOR.
+		ego       (\G) Send command to mysql server, display result vertically.
+		exit      (\q) Exit mysql. Same as quit.
+		go        (\g) Send command to mysql server.
+		help      (\h) Display this help.
+		nopager   (\n) Disable pager, print to stdout.
+		notee     (\t) Don't write into outfile.
+		pager     (\P) Set PAGER [to_pager]. Print the query results via PAGER.
+		print     (\p) Print current command.
+		prompt    (\R) Change your mysql prompt.
+		quit      (\q) Quit mysql.
+		rehash    (\#) Rebuild completion hash.
+		source    (\.) Execute an SQL script file. Takes a file name as an argument.
+		status    (\s) Get status information from the server.
+		system    (\!) Execute a system shell command.
+		tee       (\T) Set outfile [to_outfile]. Append everything into given outfile.
+		use       (\u) Use another database. Takes database name as argument.
+		charset   (\C) Switch to another charset. Might be needed for processing binlog with multi-byte charsets.
+		warnings  (\W) Show warnings after every statement.
+		nowarning (\w) Don't show warnings after every statement.
+	2、在mysql命令行中获取SQL命令帮助。
+		help KEYWORD：显示关于KEYWORD的语法格式等相关信息，如：help select。
+		help contents：获取help关键字的内容列表，获取到的每行的信息都是MySQL所有能够获取的帮助命令的分组信息，而以下所有分组信息的详细信息都可以通过help加上组信息名查看。
+			contents：
+				Account Management：账号管理；
+				Administration：MySQL管理，通常包含select命令；
+				Compound Statements：组合语句；
+				Data Definition：数据定义；
+				Data Manipulation：数据操作；
+				Data Types：数据类型；
+				Functions：函数；
+				Functions and Modifiers for Use with GROUP BY：与用户和组相关的函数和修改功能；
+				Language Structure：语言结构；
+				Plugins：插件；
+				Procedures：程序；
+				Storage Engines：存储引擎；
+				Table Maintenance：表维护；
+				User-Defined Functions：用户自定义函数；
+
+	

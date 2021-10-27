@@ -1,0 +1,74 @@
+MySQL版本降级：
+	1、使用mysqldump或xtrabackup的方式将数据导出，然后再将入至低版本的库中。
+	2、参照官方文档中2.12.4章中的“In-Place Downgrade”
+
+	注意：
+		1、mysql不支持跨版本的降级（即不支持从mysql 5.X降级为mysql 4.x）。
+		2、仅支持GA版本之间的降级。
+
+降级操作：
+
+	1、将数据库的表结构从5.7降级为5.6
+		○ 在MySQL5.7.13以前，系统表中的列存储user@host字符串值的长度增加，因此在降级到以前的版本之前，需要确保user@host值超过77字符长度的限制，并执行以下的mysql系统表变更：
+			mysql> ALTER TABLE mysql.proc MODIFY definer char(77) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT ''; 
+			mysql> ALTER TABLE mysql.event MODIFY definer char(77) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT ''; 
+			mysql> ALTER TABLE mysql.tables_priv MODIFY Grantor char(77) COLLATE utf8_bin NOT NULL DEFAULT ''; 
+			mysql> ALTER TABLE mysql.procs_priv MODIFY Grantor char(77) COLLATE utf8_bin NOT NULL DEFAULT '';
+			
+		○ 在MySQL5.7.8以后，其用户名的最大长度从16个字符增加到32个字符，因此降级到以前的版本需确保用户名没有超过16个字符的长度，然后执行如下操作：
+			mysql> ALTER TABLE mysql.tables_priv MODIFY User char(16) NOT NULL default '';
+			mysql> ALTER TABLE mysql.columns_priv MODIFY User char(16) NOT NULL default '';
+			mysql> ALTER TABLE mysql.user MODIFY User char(16) NOT NULL default '';
+			mysql> ALTER TABLE mysql.db MODIFY User char(16) NOT NULL default '';
+			mysql> ALTER TABLE mysql.procs_priv MODIFY User char(16) binary DEFAULT '' NOT NULL;
+			
+		○ mysql.user表中的Password列在5.7.6中已被移除，该列被authentication_string所替代，如需使得mysql.user表与以前的版本兼容，需执行如下操作：
+			mysql> ALTER TABLE mysql.user ADD Password char(41) character set latin1 collate latin1_bin NOT NULL default '' AFTER user;
+			mysql> UPDATE mysql.user SET password = authentication_string WHERE LENGTH(authentication_string) = 41 AND plugin = 'mysql_native_password';
+			mysql> UPDATE mysql.user SET authentication_string = '' WHERE LENGTH(authentication_string) = 41 AND plugin = 'mysql_native_password';
+			
+		○ help_*和time_zone*系统表在5.7.5以后从MyISAM转为InnoDB，因此在降级前需执行如下操作将受影响的表的存储引擎修改为MyISAM
+			mysql> ALTER TABLE mysql.help_category ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.help_keyword ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.help_relation ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.help_topic ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.time_zone ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.time_zone_leap_second ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.time_zone_name ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.time_zone_transition  ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.time_zone_transition_type ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			
+		○ plugin和servers系统表在5.7.6以后由MyISAM转为InnoDB，因此在降级前需执行如下操作将受影响的表的存储引擎修改为MyISAM
+			mysql> ALTER TABLE mysql.plugin ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			mysql> ALTER TABLE mysql.servers ENGINE='MyISAM' STATS_PERSISTENT=DEFAULT;
+			
+		○ 在MySQL5.7中mysql.user表中plugin列的定义不同，因此在降级到5.6.23及其以前更早的MySQL5.6的版本之前需执行如下操作
+			mysql> ALTER TABLE mysql.user MODIFY plugin CHAR(64) COLLATE utf8_bin DEFAULT 'mysql_native_password';
+		在降级到MySQL5.6.22或更早的版本之前，需使用如下语句更改Plugin列的定义
+			mysql> ALTER TABLE mysql.user MODIFY plugin CHAR(64) COLLATE utf8_bin DEFAULT '';
+		
+		○ 从MySQL5.7.7以后，默认在安装数据目录是会安装sys库，因此在降级到以前的版本建议删除sys库
+			mysql> DROP DATABASE sys;
+			
+	2、通过将innodb_fast_shutdown设置为0使得MySQL执行缓慢关闭
+		# mysql -u root -p --execute="SET GLOBAL innodb_fast_shutdown=0"
+			通过缓慢关闭，InnoDB会在关闭之前执行完全清除和更改缓冲区合并，从而确保数据文件在发布之间的格式不同的情况下完全准备好。以确保脏页都保存至InnoDB的磁盘中的文件中。
+			
+	3、关闭MySQL数据库服务
+		# mysqladmin -u root -p shutdown
+
+	4、缓慢关闭后，从数据目录中删除InnoDB的redo日志（ib_logfile*文件），从而尽可能避免与版本之间可能发生的redo日志格式更改相关的降级问题
+		# rm ib_logfile*
+
+	5、将此前/usr/local/mysql的软链接的引用路径修改为5.6的MySQL的目录
+		# unlink /usr/local/mysql
+		# ln -s /usr/local/mysql-5.6.xxx /usr/local/mysql
+
+	6、启动MySQL服务
+		# mysqld_safe --user=mysql --datadir=/path/to/existing-datadir
+
+	7、执行mysql_upgrade操作
+		# mysql_upgrade -u root -p
+
+
+注意：事实上MySQL官方已提供了一份降级的sql脚本（位于源码包的scripts目录下）名为mysql_system_tables_fix_for_downgrade.sql，但事实上根据官方文档的操作可能仍然无法成功降级，其原因可能是由于mysql.user表不可读导致的，因此应尽可能避免MySQL数据库的降级操作。

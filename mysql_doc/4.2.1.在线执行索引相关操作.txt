@@ -1,0 +1,45 @@
+在线执行索引相关操作
+	1、创建或添加二级索引
+	2、删除索引
+	3、重命名指定索引
+	4、添加全文索引
+	5、添加空间索引
+	6、修改索引类型
+
+	+--------------------------------------+----------+----------------+------------------------+------------------------+
+	|             Operation                | In Place | Rebuilds Table | Permits Concurrent DML | Only Modifies Metadata |
+	+--------------------------------------+----------+----------------+------------------------+------------------------+
+	| Creating or adding a secondary index | Yes      | No             | Yes                    | No                     |
+	| Dropping an index                    | Yes      | No             | Yes                    | Yes                    |
+	| Renaming an index                    | Yes      | No             | Yes                    | Yes                    |
+	| Adding a FULLTEXT index              | Yes *    | No *           | No                     | No                     |
+	| Adding a SPATIAL index               | Yes      | No             | No                     | No                     |
+	| Changing the index type              | Yes      | No             | Yes                    | Yes                    |
+	+--------------------------------------+----------+----------------+------------------------+------------------------+
+
+创建或添加二级索引：
+	语法：
+		CREATE INDEX name ON table (col_list);
+		ALTER TABLE tbl_name ADD INDEX name (col_list);
+
+删除索引：
+	语法：
+		DROP INDEX name ON table;
+		ALTER TABLE tbl_name DROP INDEX name;
+
+索引重命名：
+	语法：
+		ALTER TABLE tbl_name RENAME INDEX old_index_name TO new_index_name, ALGORITHM=INPLACE, LOCK=NONE;
+
+添加全文索引：
+	语法：
+		CREATE FULLTEXT INDEX name ON table(column);
+
+添加空间索引：
+	语法：
+		CREATE TABLE geom (g GEOMETRY NOT NULL);
+		ALTER TABLE geom ADD SPATIAL INDEX(g), ALGORITHM=INPLACE, LOCK=SHARED;
+
+修改索引类型：
+	语法：
+		ALTER TABLE tbl_name DROP INDEX i1, ADD INDEX i1(key_part,...) USING BTREE, ALGORITHM=INPLACE;

@@ -1,0 +1,118 @@
+外键约束
+
+建表时指定外键：
+	1、外键也是一种约束。
+	2、在外键中指定“ON DELETE CASCADE”或“ON UPDATE CASCADE”表示在父表中的更新也会同步到子表中，在父表中删除指定行在子表中关联该行的记录也会一并删除（见示例1）。
+	3、级联模式如被指定为“NO ACTION”或“RESTRICT”，则父表中的值如被子表所引用，则父表中的对应字段不允许更新（见示例2）。
+	4、外键对性能的影响比较大，类似于此类的外键约束可通过应用来实现。
+
+示例1：建表时一并指定外键
+	mysql> CREATE TABLE `parent` (
+		-> `id` int(11) NOT NULL AUTO_INCREMENT,
+		-> PRIMARY KEY (`id`)
+		-> ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin;
+	mysql> CREATE TABLE `child` (
+		-> `id` int(11) NOT NULL,
+		-> `parent_id` int(11) DEFAULT NULL,
+		-> KEY `par_index` (`parent_id`),
+		-> CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+		-> ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin;
+	mysql> INSERT INTO parent VALUES (NULL),(NULL),(NULL);
+	mysql> SELECT * FROM parent;
+		+----+
+		| id |
+		+----+
+		|  1 |
+		|  2 |
+		|  3 |
+		+----+
+	mysql> INSERT INTO child (id, parent_id) VALUES (1,1),(2,2),(3,1);
+	mysql> SELECT * FROM child;
+		+----+-----------+
+		| id | parent_id |
+		+----+-----------+
+		|  1 |         1 |
+		|  2 |         2 |
+		|  3 |         1 |
+		+----+-----------+
+	mysql> UPDATE parent SET id=5 WHERE id=1;
+	mysql> SELECT * FROM parent;
+		+----+
+		| id |
+		+----+
+		|  2 |
+		|  3 |
+		|  5 |
+		+----+
+	mysql> SELECT * FROM child;
+		+----+-----------+
+		| id | parent_id |
+		+----+-----------+
+		|  1 |         5 |
+		|  2 |         2 |
+		|  3 |         5 |
+		+----+-----------+
+	mysql> DELETE FROM parent WHERE id=2;
+	mysql> SELECT * FROM parent;
+		+----+
+		| id |
+		+----+
+		|  3 |
+		|  5 |
+		+----+
+	mysql> SELECT * FROM child;
+		+----+-----------+
+		| id | parent_id |
+		+----+-----------+
+		|  1 |         5 |
+		|  3 |         5 |
+		+----+-----------+
+
+示例2：删除外键后创建一个新的外键并将模式指定为“NO ACTION”
+	mysql> SHOW CREATE TABLE child\G
+		*************************** 1. row ***************************
+		       Table: child
+		Create Table: CREATE TABLE `child` (
+		  `id` int(11) NOT NULL,
+		  `parent_id` int(11) DEFAULT NULL,
+		  KEY `par_index` (`parent_id`),
+		  CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+	mysql> ALTER TABLE child DROP FOREIGN KEY child_ibfk_1;
+	mysql> SHOW CREATE TABLE child\G
+		*************************** 1. row ***************************
+		       Table: child
+		Create Table: CREATE TABLE `child` (
+		  `id` int(11) NOT NULL,
+		  `parent_id` int(11) DEFAULT NULL,
+		  KEY `par_index` (`parent_id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+	mysql> ALTER TABLE child ADD FOREIGN KEY (parent_id) REFERENCES parent (id) ON DELETE NO ACTION ON UPDATE NO ACTION;
+	mysql> SHOW CREATE TABLE child\G
+		*************************** 1. row ***************************
+		       Table: child
+		Create Table: CREATE TABLE `child` (
+		  `id` int(11) NOT NULL,
+		  `parent_id` int(11) DEFAULT NULL,
+		  KEY `par_index` (`parent_id`),
+		  CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+		) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+	mysql> UPDATE parent SET id=4 WHERE id=3;
+	mysql> SELECT * FROM parent;
+		+----+
+		| id |
+		+----+
+		|  4 |
+		|  5 |
+		+----+
+	mysql> SELECT * FROM child;
+		+----+-----------+
+		| id | parent_id |
+		+----+-----------+
+		|  1 |         5 |
+		|  3 |         5 |
+		+----+-----------+
+	mysql> DELETE FROM parent WHERE id=5;
+		ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`test1`.`child`, CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)
+	mysql> UPDATE parent SET id=1 WHERE id=5;
+		ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constraint fails (`test1`.`child`, CONSTRAINT `child_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION)

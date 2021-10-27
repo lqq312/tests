@@ -1,0 +1,75 @@
+MySQL基础
+
+MySQL数据库与数据库实例
+    MySQL数据库：操作系统上的文件或其他形式文件类型的集合。而在MySQL中数据库文件可以是“frm”、“myd”、“myi”、“ibd”结尾的文件，而使用NDB存储引擎时，数据库可能不是操作系统上的文件，而是存放于内存中的文件但仍是MySQL数据库。
+    数据库实例：由数据库后台进程/线程以及一个共享内存区组成。共享内存可以被运行的后台进程/线程所共享。数据库实例才是真正操作数据库文件的。
+
+MySQL是单进程多线程模型。
+
+MySQL存储引擎：最小单位是表，存储引擎用于实现数据库对磁盘中文件进行管理的接口，不同的接口其适用的场景不同。
+    存储引擎也就是用于处理数据库的相关CRUD（Create，Read，Update和Delete）操作。
+
+    MySQL存储引擎：
+        官方：MyISAM、InnoDB、Memory、Federated、CSV、Archive。
+        第三方：TokuDB、InfoBright、Spider。
+
+    查看当前MySQL支持的存储引擎：
+        mysql> SHOW ENGINES;
+            +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+            | Engine             | Support | Comment                                                        | Transactions | XA   | Savepoints |
+            +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+            | InnoDB             | DEFAULT | Supports transactions, row-level locking, and foreign keys     | YES          | YES  | YES        |
+            | MRG_MYISAM         | YES     | Collection of identical MyISAM tables                          | NO           | NO   | NO         |
+            | MEMORY             | YES     | Hash based, stored in memory, useful for temporary tables      | NO           | NO   | NO         |
+            | BLACKHOLE          | YES     | /dev/null storage engine (anything you write to it disappears) | NO           | NO   | NO         |
+            | MyISAM             | YES     | MyISAM storage engine                                          | NO           | NO   | NO         |
+            | CSV                | YES     | CSV storage engine                                             | NO           | NO   | NO         |
+            | ARCHIVE            | YES     | Archive storage engine                                         | NO           | NO   | NO         |
+            | PERFORMANCE_SCHEMA | YES     | Performance Schema                                             | NO           | NO   | NO         |
+            | FEDERATED          | NO      | Federated MySQL storage engine                                 | NULL         | NULL | NULL       |
+            +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+
+    在MySQL中设置默认存储引擎：
+        mysql> SET  default_storage_engine=InnoDB;
+
+MySQL逻辑存储结构：
+    instance > database = schema > table > view
+
+    1、在MySQL中一个数据库就对就“datadir”目录下一个目录。
+    2、每张表则对应一组文件（例如：.frm文件是表结构定义文件，.MYD即为MyISAM表的数据文件，.MYI为MyISAM表的索引文件）。
+
+MySQL的主要文件：
+    1、数据库配置文件。
+    2、表结构定义文件。
+        a、每个表对应一个表结构定义文件。
+        b、表结构定义文件以“.frm”结尾。
+        c、表结构定义文件是二进制文件。
+    3、错误文件。
+        a、由配置文件中的“log_error”变量进行定义。
+    4、慢查询日志。
+        a、由配置文件中的“slow_query_log定义是否开启慢查日志，由slow_query_log_file指定慢查日志的位置和文件名”。
+    5、通用日志。
+
+    MyISAM：MySQL5.1以前的默认存储引擎。
+        • 堆表数据结构
+        • 表锁设计
+        • 支持数据静态压缩
+        • 不支持事务
+        • 数据容易丢失，因为数据是写入到操作系统的缓存中的，而系统宕机则会导致数据丢失和索引的损坏
+        • 索引容易损坏，由于磁盘写满，有一部分数据写入到MYD文件，而另一部分索引没有写入到MYI文件时容易产生此类问题
+        • 数据文件可直接复制到另一主机中直接使用
+        • 对系统的多核心的支持较差
+
+    InnoDB
+
+    Archive
+
+    Federated
+
+    Memory
+
+    Merge
+
+    Cluster
+
+    BDB

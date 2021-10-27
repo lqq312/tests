@@ -1,0 +1,11 @@
+1、MySQL的审计插件：
+    MySQL本身不支持审计功能，但可通过安装其他的插件以实现审计功能，例如：Mariadb、Percona或Mcafee；
+        https://blog.csdn.net/stubborn_cow/article/details/51209503
+        MariaDB：
+            https://mariadb.com/kb/en/library/mariadb-audit-plugin/
+            https://mariadb.com/kb/en/mariadb/mariadb-documentation/mariadb-plugins/server_audit-mariadb-audit-plugin/
+        Percona-server：
+            http://www.percona.com/doc/percona-server/5.6/management/audit_log_plugin.html
+        Mcafee：
+            https://github.com/mcafee/mysql-audit/wiki
+            https://github.com/mcafee/mysql-audit/wiki/Troubleshooting

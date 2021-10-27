@@ -1,0 +1,11 @@
+数字类型：
+    单精度类型：FLOAT
+        FLOAT(M,D)
+    双精度类型：DOUBLE
+        DOUBLE(M,D)
+    高精度类型：DECIMAL
+        DECIMAL(M,D)
+
+    M表示该值一共多少位，D表示小数点后面的位数。
+
+    注意：财务、账务系统必须使用“DECIMAL”类型。

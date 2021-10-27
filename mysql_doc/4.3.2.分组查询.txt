@@ -1,0 +1,124 @@
+分组查询
+    通过指定的条件进行分组，分组条件通常会按照指定字段中的每个值进行分组。
+
+    示例1主要是对单表内的字段进行分组。
+    示例2和示例3主要是对字段进行处理后进行分组。
+
+使用HAVING子句对分组的结果进行条件过滤：
+    1、在HAVING之前已使用了ON和WHERE进行过滤，HAVING是最后一个过滤器（见示例4）。
+
+示例1：查询employees表中每个部门的员工数
+    mysql> SELECT
+        -> dept_name,
+        -> COUNT( e.emp_no ) AS numbers 
+        -> FROM
+        -> employees AS e
+        -> INNER JOIN dept_emp AS de ON e.emp_no = de.emp_no
+        -> INNER JOIN departments AS d ON d.dept_no = de.dept_no
+        -> GROUP BY
+        -> de.dept_no;
+        +--------------------+---------+
+        | dept_name          | numbers |
+        +--------------------+---------+
+        | Marketing          |   20211 |
+        | Finance            |   17346 |
+        | Human Resources    |   17786 |
+        | Production         |   73485 |
+        | Development        |   85707 |
+        | Quality Management |   20117 |
+        | Sales              |   52245 |
+        | Research           |   21126 |
+        | Customer Service   |   23580 |
+        +--------------------+---------+
+
+示例2：查询dbt3库中order表里每个客户每个月的订单数。
+    mysql> SELECT
+        -> o_custkey,
+        -> COUNT( o_orderkey ) AS order_numbers,
+        -> DATE_FORMAT( o_orderDATE, "%Y-%m" ) AS "YYYY-MM" 
+        -> FROM
+        -> orders 
+        -> GROUP BY
+        -> o_custkey,
+        -> DATE_FORMAT( o_orderDATE, "%Y-%m" )
+        -> LIMIT 10;
+        +-----------+---------------+---------+
+        | o_custkey | order_numbers | YYYY-MM |
+        +-----------+---------------+---------+
+        |         1 |             1 | 1992-04 |
+        |         1 |             1 | 1992-08 |
+        |         1 |             1 | 1996-06 |
+        |         1 |             1 | 1996-07 |
+        |         1 |             1 | 1996-12 |
+        |         1 |             1 | 1997-03 |
+        |         2 |             1 | 1992-04 |
+        |         2 |             1 | 1994-05 |
+        |         2 |             1 | 1994-08 |
+        |         2 |             1 | 1994-12 |
+        +-----------+---------------+---------+
+
+示例3：查询dbt3库中order表里每个客户每周的订单（在每年的最后一周可能会跨年）
+    mysql> SELECT
+        -> o_custkey,
+        -> COUNT( o_orderkey ) AS order_numbers,
+        -> YEAR(o_orderDATE) AS "year",
+        -> WEEKOFYEAR( o_orderDATE ) AS "week" 
+        -> FROM
+        -> orders 
+        -> GROUP BY
+        -> o_custkey,
+        -> YEAR(o_orderDATE),
+        -> WEEKOFYEAR( o_orderDATE )
+        -> LIMIT 10;
+        +-----------+---------------+------+------+
+        | o_custkey | order_numbers | year | week |
+        +-----------+---------------+------+------+
+        |         1 |             1 | 1992 |   16 |
+        |         1 |             1 | 1992 |   34 |
+        |         1 |             1 | 1996 |   26 |
+        |         1 |             1 | 1996 |   27 |
+        |         1 |             1 | 1996 |   50 |
+        |         1 |             1 | 1997 |   12 |
+        |         2 |             1 | 1992 |   14 |
+        |         2 |             1 | 1994 |   20 |
+        |         2 |             1 | 1994 |   34 |
+        |         2 |             1 | 1994 |   51 |
+        +-----------+---------------+------+------+
+
+    mysql> SELECT o_custkey, ADDDATE('1970-01-05', INTERVAL FLOOR(DATEDIFF(o_orderdate, '1970-01-05')/7)*7 DAY) AS start, ADDDATE('1970-01-05', INTERVAL FLOOR(DATEDIFF(o_orderdate, '1970-01-05')/7)*7+6 DAY) AS end, COUNT(o_orderkey) AS total FROM dbt3.orders GROUP BY o_custkey, star, end; 
+
+示例：查询employees库dept_emp表中部门人数大于30000的部门有哪些。
+    mysql> SELECT
+        -> dept_no,
+        -> COUNT( emp_no ) AS numbers 
+        -> FROM
+        -> dept_emp 
+        -> GROUP BY
+        -> dept_no 
+        -> HAVING
+        -> COUNT( emp_no ) > 30000;
+        +---------+---------+
+        | dept_no | numbers |
+        +---------+---------+
+        | d004    |   73485 |
+        | d005    |   85707 |
+        | d007    |   52245 |
+        +---------+---------+
+    mysql> SELECT
+        -> dept_name,
+        -> d.dept_no,
+        -> COUNT( d.emp_no ) AS numbers 
+        -> FROM
+        -> dept_emp AS d
+        -> LEFT JOIN departments AS de ON d.dept_no = de.dept_no 
+        -> GROUP BY
+        -> d.dept_no 
+        -> HAVING
+        -> COUNT( d.emp_no ) > 30000;
+        +-------------+---------+---------+
+        | dept_name   | dept_no | numbers |
+        +-------------+---------+---------+
+        | Production  | d004    |   73485 |
+        | Development | d005    |   85707 |
+        | Sales       | d007    |   52245 |
+        +-------------+---------+---------+

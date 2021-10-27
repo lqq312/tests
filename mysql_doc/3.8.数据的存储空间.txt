@@ -1,0 +1,23 @@
+数据的存储空间
+
+不同类型的数据存储在JSON类型字段所需的存储空间：此处所定义的均是在InnoDB存储引擎下的存储空间。
+	数值类型：
+		+----------------------------+---------------------------------------------------+
+		|          Data Type         |                 Storage Required                  |
+		+----------------------------+---------------------------------------------------+
+		| TINYINT                    | 1 bytes                                           |
+		| SMALLINT                   | 2 bytes                                           |
+		| MEDIUMINT                  | 3 bytes                                           |
+		| INT, INTEGER               | 4 bytes                                           |
+		| BIGINT                     | 8 bytes                                           |
+		| FLOAT(p)                   | 4 bytes if 0 <= p <= 24, 8 bytes if 25 <= p <= 53 |
+		| FLOAT                      | 4 bytes                                           |
+		| DOUBLE [PRECISION], REAL   | 8 bytes                                           |
+		| DECIMAL(M,D), NUMERIC(M,D) | Varies; see following discussion                  |
+		| BIT(M)                     | approximately(M+7)/8 bytes                        |
+		+----------------------------+---------------------------------------------------+
+
+		DECIMAL（和NUMERIC）列的值使用二进制格式表示，该格式将九个十进制（基数10）数字打包成四个字节。每个值的整数和小数部分的存储是分开确定的。九个数字的每个倍数需要四个字节，“剩余”数字需要四个字节的一小部分。超出数字所需的存储量由下表给出
+
+	日期时间型：
+

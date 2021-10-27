@@ -1,0 +1,152 @@
+MySQL的SSL连接
+
+SSL：Secure Socket Layer，是维护Client - Server之间加密通讯的一套安全协议；
+	不使用SSL则会导致通信的数据包为明文：
+		shell> tcpdump -i ens192 -s0 -nn -vvv -A tcp dst port 3306 and dst host 192.168.3.50 >> /tmp/dump3306.txt
+		client> mysql -uroot -h192.168.3.50 -p -e "select user,host,authentication_string from mysql.user;"
+		client> mysql -uroot -h192.168.3.50 -p -e "create user 't1'@'%' identified by 'redhat';"
+		shell> cat /tmp/dump3306.txt
+			......
+			192.168.101.120.51727 > 192.168.3.50.3306: Flags [P.], cksum 0x6e2f (correct), seq 5:79, ack 12, win 2048, options [nop,nop,TS val 202851311 ecr 74977503], length 74
+			E..~..@.?.Q...ex...2....=.&..]......n/.....
+			..C..x..F....select user,host,authentication_string from mysql.user
+			LIMIT 0, 1000
+			......
+			192.168.101.120.51727 > 192.168.3.50.3306: Flags [P.], cksum 0xd819 (correct), seq 5:53, ack 12, win 2048, options [nop,nop,TS val 202914069 ecr 75040357], length 48
+			E..d..@.?.Q...ex...2....=.'..]._...........
+			..9..y.e,....create user "t1"@"%" identified by "redhat"
+	从上述的事例可以看出明文的SQL会被抓包并解析出原SQL。
+
+配置MySQL 5.7支持SSL会话：
+	1、生成CA的密钥对、服务的密钥对和客户端的密钥对（注意密钥创建后文件的属主和属组）
+		shell> mysql_ssl_rsa_setup  --datadir=/data1 --user=mysql --uid=mysql
+		shell> ll *.pem
+			-rw------- 1 mysql mysql 1679 Jul 24 11:25 ca-key.pem			# CA的私钥
+			-rw-r--r-- 1 mysql mysql 1107 Jul 24 11:25 ca.pem				# CA的公钥
+			-rw-r--r-- 1 mysql mysql 1107 Jul 24 11:25 client-cert.pem		# 客户端的证书
+			-rw------- 1 mysql mysql 1679 Jul 24 11:25 client-key.pem		# 客户端的私钥文件
+			-rw------- 1 mysql mysql 1675 Jul 24 11:25 private_key.pem		# 用于密钥交换的私钥
+			-rw-r--r-- 1 mysql mysql  451 Jul 24 11:25 public_key.pem		# 用于密钥交换的公钥
+			-rw-r--r-- 1 mysql mysql 1107 Jul 24 11:25 server-cert.pem		# 服务端的公钥
+			-rw------- 1 mysql mysql 1679 Jul 24 11:25 server-key.pem		# 服务端的私钥
+
+	2、重启服务，使得当前的MySQL实例支持SSL会话
+		shell> systemctl restart mysqld
+		shell> mysql --login-path=local_mysql
+		mysql> SHOW VARIABLES LIKE "ssl%";
+			+---------------+-----------------+
+			| Variable_name | Value           |
+			+---------------+-----------------+
+			| ssl_ca        | ca.pem          |
+			| ssl_capath    |                 |
+			| ssl_cert      | server-cert.pem |
+			| ssl_cipher    |                 |
+			| ssl_crl       |                 |
+			| ssl_crlpath   |                 |
+			| ssl_key       | server-key.pem  |
+			+---------------+-----------------+
+		mysql> STATUS
+			--------------
+			mysql  Ver 14.14 Distrib 5.7.25, for el7 (x86_64) using  EditLine wrapper
+
+			Connection id:          2
+			Current database:
+			Current user:           root@localhost
+			SSL:                    Not in use
+			Current pager:          stdout
+			Using outfile:          ''
+			Using delimiter:        ;
+			Server version:         5.7.25-log MySQL Community Server (GPL)
+			Protocol version:       10
+			Connection:             Localhost via UNIX socket
+			Server characterset:    utf8mb4
+			Db     characterset:    utf8mb4
+			Client characterset:    utf8
+			Conn.  characterset:    utf8
+			UNIX socket:            /my_data/mysql5.7/run/mysqld.sock
+			Uptime:                 1 min 59 sec
+
+			Threads: 1  Questions: 7  Slow queries: 0  Opens: 111  Flush tables: 1  Open tables: 27  Queries per second avg: 0.058
+			--------------
+		mysql> QUIT
+		shell> mysql -uadmin -h127.0.0.1 -p --ssl
+		mysql> STATUS
+			--------------
+			mysql  Ver 14.14 Distrib 5.7.25, for el7 (x86_64) using  EditLine wrapper
+
+			Connection id:          3
+			Current database:
+			Current user:           admin@127.0.0.1
+			SSL:                    Cipher in use is DHE-RSA-AES256-SHA
+			Current pager:          stdout
+			Using outfile:          ''
+			Using delimiter:        ;
+			Server version:         5.7.25-log MySQL Community Server (GPL)
+			Protocol version:       10
+			Connection:             127.0.0.1 via TCP/IP
+			Server characterset:    utf8mb4
+			Db     characterset:    utf8mb4
+			Client characterset:    utf8
+			Conn.  characterset:    utf8
+			TCP port:               3306
+			Uptime:                 3 min 36 sec
+
+			Threads: 1  Questions: 13  Slow queries: 0  Opens: 111  Flush tables: 1  Open tables: 27  Queries per second avg: 0.060
+			--------------
+
+	3、授权用户使用“ssl”进行连接
+		mysql> ALTER USER "admin"@"192.168.%" REQUIRE SSL;
+		shell(client)> mysql -uadmin -h192.168.3.50 -p --ssl
+
+	4、授权用户使用“x509”进行连接（则仅能使用指定的客户端证书进行连接）
+		mysql> CREATE USER "t1"@"%";
+		mysql> ALTER USER "t1"@"%" REQUIRE X509;
+		mysql> FLUSH PRIVILEGES;
+		mysql> SELECT * FROM mysql.user WHERE User="t1"\G
+			*************************** 1. row ***************************
+			                  Host: %
+			                  User: t1
+			           Select_priv: N
+			           Insert_priv: N
+			           Update_priv: N
+			           Delete_priv: N
+			           Create_priv: N
+			             Drop_priv: N
+			           Reload_priv: N
+			         Shutdown_priv: N
+			          Process_priv: N
+			             File_priv: N
+			            Grant_priv: N
+			       References_priv: N
+			            Index_priv: N
+			            Alter_priv: N
+			          Show_db_priv: N
+			            Super_priv: N
+			 Create_tmp_table_priv: N
+			      Lock_tables_priv: N
+			          Execute_priv: N
+			       Repl_slave_priv: N
+			      Repl_client_priv: N
+			      Create_view_priv: N
+			        Show_view_priv: N
+			   Create_routine_priv: N
+			    Alter_routine_priv: N
+			      Create_user_priv: N
+			            Event_priv: N
+			          Trigger_priv: N
+			Create_tablespace_priv: N
+			              ssl_type: X509
+			            ssl_cipher: 
+			           x509_issuer: 
+			          x509_subject: 
+			         max_questions: 0
+			           max_updates: 0
+			       max_connections: 0
+			  max_user_connections: 0
+			                plugin: mysql_native_password
+			 authentication_string: *84BB5DF4823DA319BBF86C99624479A198E6EEE9
+			      password_expired: N
+			 password_last_changed: 2019-07-24 10:37:56
+			     password_lifetime: NULL
+			        account_locked: N
+		shell(client)> mysql -ut1 -h192.168.3.50 -p --ssl-cert=/my_data/mysql5.7/data/client-cert.pem --ssl-key=/my_data/mysql5.7/data/client-key.pem

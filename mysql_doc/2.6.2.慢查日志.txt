@@ -1,0 +1,40 @@
+慢查日志：
+	1、将运行超过某个时间阈值的SQL语句记录到文件（文件名默认为“机器名.slow.log”）。
+	2、MySQL从5.1开始可以以毫秒为单位记录运行的SQL语句。
+	3、MySQL从5.5开始可以将慢查询日志保存到表中。
+	4、MySQL从5.6开始可以更细粒度的记录慢查询。
+	5、MySQL从5.7开始可以将时区信息写入到慢查询日志中。
+
+参数详解：
+	slow_query_log：定义是否开启慢查询日志（bool值，yes/no，on/off，0/1），该变量可在线修改（mysql> SET GLOBAL slow_query_log=1; ），建议开启。
+	slow_query_log_file：定义慢查询日志的路径和文件名。
+	long_query_time：定义慢查询日志的阈值，超过该时间的即记录为慢查询，“long_query_time”的单位是，建议设置为“2s”。
+	min_examined_row_limit：扫描记录少于该值的SQL语句不记录到慢查询日志（一旦开启“log_queries_not_using_indexes”所有没有使用索引的SQL都会记录到慢查日志中，但有些表是字典表，而应用会定期去扫描该表，并且该表的行数也不多），即使这个语句执行时间超过了long_query_time的阈值，建议设置为字典表的行数。
+	log_queries_not_using_indexes：将没有使用索引的SQL记录到慢查询日志中（bool值），建议开启。
+	log_throttle_queries_not_using_indexes：限制每分钟记录没有使用索引的SQL语句的次数，超过这个数目后只记录语句数量和花费的总时间，避免慢查日志过大，可设置为“10”。
+	log_slow_admin_statement：定义是否记录管理操作，如“ALTER”、“ANALYZE TABLE”、“check table”、“create index”、“drop index”、“optimize table”、“repair table”（bool值），建议开启。
+	log_slow_slave_statements = 1：从库上执行得很慢的SQL语名是否也记录到慢查询日志中（bool值），建议开启。
+	log_output：定义慢查询日志的格式，其值可以为“FILE”、“TABLE”或“NONE”（默认为“FILE”），如果将慢查日志存放到文件中可使用“mysqldumpslow”命令进行查看，如果将慢查日志存放到表中可方便的进行统计，一般建议将其保存为“FILE”格式，因为如果备份的时候没有指定，会将慢查日志也一并备份，而慢查日志随着业务的增加，其数据量也会增加从而导致备份的数据也会很大。
+	log_timestamps：定义是否写入时区信息，可指定为“sys”。
+
+将慢查日志存放到表中：
+	shell> vim /etc/my.cnf
+		slow_query_log=1
+		slow_query_log_file=mysql.slow.log
+		long_query_time=3
+		log_output=TABLE
+	shell> systemctl restart mysqld
+	shell> mysql
+	mysql> SHOW TABLES FROM mysql;
+		此时会在mysql库中增加一张名为“slow_log”的表，该表即为慢查日志的表；
+	mysql> SELECT * FROM slow_log WHERE start_time >= "2019-07-05";
+		查看指定时段内的慢查询日志；
+
+	注意：“mysql.slow_log”表使用的存储引擎是“CSV”，而“CSV”的性能并不是特别好，建议将其修改为“myisam”，方法如下；
+		mysql> SET GLOBAL slow_query_log=off;
+		mysql> ALTER TABLE slow_log ENGINE=myisam;
+		mysql> SET GLOBAL slow_query_log=on;
+		mysql> SHOW CREATE TABLE slow_log\G
+
+线上业务慢查询日志分析：
+	shell> tail -10000 mysql.slow | mysqldumpslow

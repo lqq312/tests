@@ -1,0 +1,36 @@
+在线对“Generated”字段进行操作
+
+	+--------------------------------+----------+----------------+------------------------+------------------------+
+	|           Operation            | In Place | Rebuilds Table | Permits Concurrent DML | Only Modifies Metadata |
+	+--------------------------------+----------+----------------+------------------------+------------------------+
+	| Adding a STORED column         | No       | Yes            | No                     | No                     |
+	| Modifying STORED column order  | No       | Yes            | No                     | No                     |
+	| Dropping a STORED column       | Yes      | Yes            | Yes                    | No                     |
+	| Adding a VIRTUAL column        | Yes      | No             | Yes                    | Yes                    |
+	| Modifying VIRTUAL column order | No       | Yes            | No                     | No                     |
+	| Dropping a VIRTUAL column      | Yes      | No             | Yes                    | Yes                    |
+	+--------------------------------+----------+----------------+------------------------+------------------------+
+
+添加“STORED”类型字段：
+	语法：
+		ALTER TABLE t1 ADD COLUMN (c2 INT GENERATED ALWAYS AS (c1 + 1) STORED), ALGORITHM=COPY;
+
+修改“STORED”字段顺序：
+	语法：
+		ALTER TABLE t1 MODIFY COLUMN c2 INT GENERATED ALWAYS AS (c1 + 1) STORED FIRST, ALGORITHM=COPY;
+
+删除“STORED”字段：
+	语法：
+		ALTER TABLE t1 DROP COLUMN c2, ALGORITHM=INPLACE, LOCK=NONE;
+
+添加“VIRTUAL”类型字段：
+	语法：
+		ALTER TABLE t1 ADD COLUMN (c2 INT GENERATED ALWAYS AS (c1 + 1) VIRTUAL), ALGORITHM=INPLACE, LOCK=NONE;
+
+修改“VIRTUAL”字段排序：
+	语法：
+		ALTER TABLE t1 MODIFY COLUMN c2 INT GENERATED ALWAYS AS (c1 + 1) VIRTUAL FIRST, ALGORITHM=COPY;
+
+删除“VIRTUAL”字段：
+	语法：
+		ALTER TABLE t1 DROP COLUMN c2, ALGORITHM=INPLACE, LOCK=NONE;

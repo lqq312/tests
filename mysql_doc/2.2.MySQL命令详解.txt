@@ -1,0 +1,136 @@
+
+mysqld：mysql的服务端命令
+	mysqld [OPTIONS]
+		options：
+			--defaults-file=：仅读取给定文件中的默认选项，建议在启动时指定。
+
+mysql_upgrade：升级MySQL版本时执行该命令用于查找升级的MySQL服务器的不兼容的问题（1，它会升级mysql架构中的系统表，以便利用忆添加的新特性或功能；2、升级了性能模式和sys架构；3、检查用户模式），在版本升级时会重建所有的表，但在实际生产中表结构是相互兼容的，因此无需重建表。
+	mysql_upgrade [options]
+		options：
+			-f, --force：即使已经为当前版本的MySQL执行了“mysql_upgrade”，也强制执行mysqlcheck。
+			--protocol=[tcp|socket|pipe|memory]：指定使用哪种方式进行连接。
+			-s, --upgrade-system-tables：指定仅升级系统表而不对数据进行操作。
+
+mysql：mysql客户端工具。
+	mysql [options] db_name
+		options：
+			--login-path=name：指定使用“.mylogin.cnf”文件中的哪个标签进行登陆。
+			--host=host_name, -h host_name：指定连接的目标服务器。
+			--user：指定以哪个用户的身份进行登陆。
+			--ssl-cert=：指定使用哪个客户端证书连接服务器。
+			--ssl-key=：指定使用哪个客户端私钥连接服务器。
+			--ssl：指定使用“ssl”连接MySQL服务器。
+
+
+mysql_config_editor：使用“mysql_config_editor”工具将登陆MySQL服务的认证信息保存在当前用户“Home”目录的“.mylogin.cnf”文件中从而实现免密码登陆。
+	mysql_config_editor [options] command
+		command：
+			set：设置登陆的用户名/密码/主机名/套接字地址/端口等登陆信息。
+			remove：从登录文件中删除登录路径。
+			print：打印指定登录路径的所有选项。
+			reset：删除登陆文件的内容。
+			help：显示用法和帮助信息。
+		options：
+			-h, --host=name：指定要连接的数据库的主机名。
+			-G, --login-path=name：指定标签名，在一个“.mylogin.cnf”文件中可保存多个连接信息。
+			-p, --password：指定密码。
+			-u, --user=name：指定用户名。
+			-S, --socket=name：指定套接字在路径。
+			-w, --warn：
+			-P, --port：指定连接端口。
+			--variable-name=value
+
+	示例1：将本机的数据库连接写入到.mylogin.cnf中。
+		# mysql_config_editor set -G local_mysql5.6 -S /database/mysql5.6/run/mysqld.sock -u root -p
+		# mysql_config_editor print --all
+		# mysql --login-path=local_mysql5.6
+
+mysqldumpslow：用于格式化查看慢查询日志（一般会将同类型的SQL进行合并后展示）
+	mysqldumpslow [ OPTS... ] [ LOGS... ]
+		options：
+			--verbose, -v：
+			--debug, -d：以“debug”模式运行。
+			-s ORDER：是order的顺序降序排序，可使用的顺序如下，默认使用“at”的模式进行排序。
+				al：平均锁表时间。
+				ar：平均返回记录数。
+				at：平均查询时间。
+				c：次数。
+				l：锁表时长。
+				r：返回记录数。
+				t：查询时间。
+			-r：指定按升序进行排序。
+			-t #：指定仅显示排序前“#”条慢查询日志。
+			-a：不会将字母抽象为“S”将数字抽象为“N”。
+			-n #：名称中至少有“#”位数的抽象数字。
+			-g PATTERN：仅显示被“PATTERN”匹配上的慢查询日志。
+			-h HOSTNAME：仅查看指定主机的慢查日志。
+			-i NAME：指定服务器实例的名称。
+			-l：不要从总时间中减去锁定时间。
+
+mysqlslap：mysql自带的一个性能压测工具，可以自己造数据进行压测，mysqlslap的报告比较简单主要体现在执行的时间方面，没有sysbench那样的tps、qps等更详细。
+	mysqlslap [options]
+		options：
+			--auto-generate-sql，-a：自动生成MySQL测试语句。
+			--auto-generate-sql-add-autoincrement：添加AUTO_INCREMENT字段。
+			--auto-generate-sql-execute-number=#：查询的个数。
+			--auto-generate-sql-guid-primary：添加GUID字段。
+			--auto-generate-sql-load-type=name：指定模式，有mixed：混合、update：更新、write：写入、key：读主键、read：查询。
+			--auto-generate-sql-secondary-indexes=#：设置索引字段个数
+			--auto-generate-sql-unique-query-number=#：生成N条不同的query sql语句
+			--auto-generate-sql-unique-write-number=#：生成N条不同的write sql语句
+			--auto-generate-sql-write-number=#：每个线程write sql语句数量
+			--commit=#：设置每多少条sql语句提交一次
+			--compress，-C：启用压缩协议
+			--concurrency=#，-c：客户端数量(并发量)
+			--create=name：测试的SQL语句或文件
+			--create-schema=name：测试的数据名
+			--csv=name：生产CSV格式数据文件
+			--debug，-#：写调试日志(windows不可用) 如：mysqlslap -a -#"d:t:o,c:/debug.txt"
+			--debug-check：测试后打印调试信息(windows不可用)
+			--debug-info，-T：打印内存和CPU的相关信息
+			--default-auth=plugin：验证插件
+			--delimiter=str，-F：语句分隔符默认是 ;
+			--detach=#：执行N条语句后断开重连
+			--enable-cleartext-plugin：启用明文身份验证插件
+			--engine=engine_name，-e：测试引擎 如：mysqlslap -e"myisam"或-e"myisam,innodb"
+			--help：帮助信息
+			--host=host_name，-h：数据库host
+			--iterations=#，-i：重复运行的次数
+			--login-path=name：登陆配置文件
+			--no-drop：测试后不删除schema
+			--number-char-cols=#，-x：设置VARCHAR类型字段数量
+			--number-int-cols=#，-y：设置INT类型字段数量
+			--number-of-queries=#：每个客户端运行sql语句数量
+			--only-print：仅显示将被运行的SQL语句--delimiter选项影响
+			--password=password，-p：数据库密码
+			--pipe：启用管道
+			--plugin-dir=path：插件目录
+			--port=port_num，-P：数据库端口
+			--post-query=value：测试后执行的SQL语句
+			--post-system=str：测试后执行的系统语句
+			--pre-query=value：测试前执行的SQL语句
+			--pre-system=str：测试前执行的系统语句
+			--protocol=type：链接协议 tcp, socket, pipe
+			--query=value，-q：测试的SQL语句 如：mysqlslap --query="SELECT * FROM t1"
+			--secure-auth：不要发送密码到服务器
+			--silent，-s：不显示测试（静音测试）
+			--socket=path，-S：连接服务器的socket
+			--ssl-ca=file_name：
+			--ssl-capath=dir_name：
+			--ssl-cert=file_name：
+			--ssl-cipher=cipher_list：
+			--ssl-crl=file_name：
+			--ssl-crlpath=dir_name：
+			--ssl-key=file_name：
+			--ssl-verify-server-cert：
+			--user=user_name    -u：数据库用户名
+			--verbose，-v：输出更多的信息
+			--version，-V：版本信息
+
+	示例1：分别测试100、200、400个并发执行10w条SQL
+		shell> mysqlslap -uroot -proot -h192.168.10.43 -P3306 --create-schema=chenmh --delimiter=";" --query="call pro_auto_select_pri"  --concurrency=100,200,400 --number-of-queries=100000 
+
+mysqlfrm：
+	
+
+	mysqlfrm --diagnostic --server=USER_NAME:PASSWORD@HOSTNAME:PORT FILE_NAME

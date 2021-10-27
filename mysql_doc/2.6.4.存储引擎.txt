@@ -1,0 +1,159 @@
+存储引擎：
+    1、用来处理数据库的相关CRUD（C：create、R：Read、U：update、D：Delete）操作。
+    2、每个数据库都有存储引擎的概念。
+    3、Oracle数据库（不同类型的表即为不同的存储引擎）。
+        堆表
+        簇表
+        索引组织表
+
+如果将数据库分为两层，上层即为SQL解析器、优化器，下层即为存储引擎以管理底层数据文件。
+
+存储引擎介绍：
+    知名存储引擎：知名但MySQL无法使用。
+        Aria：
+        BlitzDB：
+        Falcom：
+        InfiniDB：
+        WiredTiger：MongoDB使用的即为该存储引擎。
+    官方存储引擎：
+        InnoDB：支持事务、行级锁和外键，而其他存储引擎已经不再维护和开发。
+        MyISAM：对多核CPU的利用率非常差。
+        Memory：
+        Federated：
+        CSV：
+        Archive：
+        Performance_Schema：
+        BloackHole：
+        Mrg_MyISAM：
+    第三方存储引擎：
+        TokuDB：插入密集型，该存储引擎的读取的性能较差。
+        InfoBright：OLAP（Online AnalyticalProcessing，在线分析处理）场景，社区版本有数据量的限制，主要用于列存。
+        Spider： 
+
+查看当前数据库支持的存储引擎：
+    mysql> SHOW ENGINES\G
+
+    Support字段表示当前数据库实例是否支持该存储引擎，在该字段显示为“YES”表示支持，显示为“NO”表示不支持，显示为“DEFAULT”表示支持且已设置为默认存储引擎。 
+
+设置默认的存储引擎：
+    default_storage_engine=InnoDB
+
+建议启动时关闭archive和blackhole：因为InnoDB已经支持压缩功能。
+    --skip-archive
+    --skip-blackhole  
+
+MyISAM存储引擎：多核CPU的优化很差。
+    1、MySQL 5.1版本之前的的默认存储引擎。
+    2、堆表数据结构。
+    3、表锁设计。
+    4、支持数据静态压缩。
+    5、不支持事务。
+    6、数据容易丢失。
+    7、索引容易损坏。
+    8、唯一的优点是数据文件可以直接拷贝至另一服务器使用。
+
+CSV存储引擎：
+    1、CSV即Comma-Separated Values，是一种标准文件格式。
+    2、文件以纯文本形式存储表格数据。
+    3、不支持特殊字符。
+    4、使用广泛。
+    5、通过MySQL CSV存储引擎创建了一个CSV格式的表即创建了一个CSV格式的文件。
+    6、可通过MySQL标准接口来查看和修改CSV文件。
+    7、无需将CSV文件导入到数据库。
+    8、CSV存储引擎表每个列必须是NOT NULL属性。
+
+    mysql> SHOW CREATE TABLE general_log\G
+        *************************** 1. row ***************************
+               Table: general_log
+        Create Table: CREATE TABLE `general_log` (
+          `event_time` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+          `user_host` mediumtext NOT NULL,
+          `thread_id` bigint(21) unsigned NOT NULL,
+          `server_id` int(10) unsigned NOT NULL,
+          `command_type` varchar(64) NOT NULL,
+          `argument` mediumblob NOT NULL
+        ) ENGINE=CSV DEFAULT CHARSET=utf8 COMMENT='General log'
+    mysql> SELECT * FROM mysql.general_log LIMIT 5;
+        +----------------------------+---------------------------+-----------+-----------+--------------+-------------------------------------+
+        | event_time                 | user_host                 | thread_id | server_id | command_type | argument                            |
+        +----------------------------+---------------------------+-----------+-----------+--------------+-------------------------------------+
+        | 2019-07-23 09:28:59.068810 | root[root] @ localhost [] |         3 |        11 | Quit         |                                     |
+        | 2019-07-23 09:29:03.277964 | [root] @ localhost []     |         4 |        11 | Connect      | root@localhost on  using Socket     |
+        | 2019-07-23 09:29:03.278194 | root[root] @ localhost [] |         4 |        11 | Query        | select @@version_comment limit 1    |
+        | 2019-07-23 09:29:03.278872 | root[root] @ localhost [] |         4 |        11 | Query        | select USER()                       |
+        | 2019-07-23 09:29:21.389110 | root[root] @ localhost [] |         4 |        11 | Query        | SELECT * FROM dbt3.customer LIMIT 5 |
+        +----------------------------+---------------------------+-----------+-----------+--------------+-------------------------------------+
+    shell> cat general_log.CSV
+        "2019-07-23 09:28:59.068810","root[root] @ localhost []",3,11,"Quit",""
+        "2019-07-23 09:29:03.277964","[root] @ localhost []",4,11,"Connect","root@localhost on  using Socket"
+        "2019-07-23 09:29:03.278194","root[root] @ localhost []",4,11,"Query","select @@version_comment limit 1"
+        "2019-07-23 09:29:03.278872","root[root] @ localhost []",4,11,"Query","select USER()"
+        "2019-07-23 09:29:21.389110","root[root] @ localhost []",4,11,"Query","SELECT * FROM dbt3.customer LIMIT 5"
+        "2019-07-23 09:29:38.692111","root[root] @ localhost []",4,11,"Query","SELECT * FROM mysql.general_log LIMIT 5"
+
+Federated存储引擎：
+    1、允许本地访问远程MySQL数据库中表的数据。
+    2、本地不存储任何数据文件。
+    3、类似于Oracle DBlink，仅支持MySQL ==> MySQL的访问，不支持异构数据库的访问。
+    4、Federated存储引擎默认不开启（如需启用Federated存储引擎则需要在配置文件的[mysqld]字段下定义federated重启即可）。
+    5、MariaDB在FederatedX存储引擎支持异构数据库远程访问。
+
+    创建一个使用Federated存储引擎的表：
+        远程数据库连接字符串：
+            scheme://USER_NAME[:PASSWORD]@host_name[:PORT]/db_name/tb_name
+            CONNECTION='mysql://USER_NAME[:PASSWORD]@host_name[:PORT]/db_name/tb_name'
+        创建Federated表：
+            CREATE TABLE tb_name (
+                COL1 NOT NULL,
+                COL2 ...
+            ) ENGINE=FEDERATE
+            CONNECTION="MYSQL://USER_NAME:PASSWORD@HOST:PORT/DB_NAME/TB_NAME";
+
+    示例：
+        192.168.3.55（mysql5.6）：
+            mysql> CREATE USER "tuser01"@"%" IDENTIFIED BY "redhat";
+            mysql> GRANT SELECT ON test56.t1 TO "tuser01"@"%";
+            mysql> FLUSH PRIVILEGES;
+            mysql> CREATE TABLE t1
+                -> (id int(3) not null primary key auto_increment,
+                -> name varchar(40) not null)
+                -> ENGINE=InnoDB AUTO_INCREMENT=0;
+            mysql> INSERT INTO test56.t1 (name) VALUES ("tom") ,("jerry"), ("jim");
+            mysql> SELECT * FROM test56.t1;
+                +----+-------+
+                | id | name  |
+                +----+-------+
+                |  1 | tom   |
+                |  2 | jerry |
+                |  3 | jim   |
+                +----+-------+
+
+        192.168.3.50（mysql5.7）：
+            mysql> CREATE DATABASE IF NOT EXISTS test1;
+            mysql> CREATE TABLE fed_t1 
+                -> (id int(3) not null primary key auto_increment,
+                -> name varchar(40) not null)
+                -> ENGINE=Federated 
+                -> CONNECTION="MYSQL://tuser01:redhat@192.168.3.55/test56/t1";
+            mysql> SELECT * FROM fed_t1;
+                +----+-------+
+                | id | name  |
+                +----+-------+
+                |  1 | tom   |
+                |  2 | jerry |
+                |  3 | jim   |
+                +----+-------+
+
+        192.168.3.55（mysql5.6）：
+            mysql> INSERT INTO test56.t1 (name) VALUES ("jimy");
+
+        192.168.3.50（mysql5.7）：
+            mysql> SELECT * FROM fed_t1;
+                +----+-------+
+                | id | name  |
+                +----+-------+
+                |  1 | tom   |
+                |  2 | jerry |
+                |  3 | jim   |
+                |  4 | jimy  |
+                +----+-------+

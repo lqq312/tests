@@ -1,0 +1,13 @@
+通用日志：
+    1、可以记录数据库所有相关的操作。
+    2、同样可以将日志保存到表。
+    3、开启后性能下降明显。
+
+    在某些时候需要抓取特定的SQL，而这条SQL的执行时间很短，此时可使用“general_log”进行debug，或者开启“general_log”以实现审计的功能，MySQL的Ente rprise版本中就提供了Audit的插件，该审计的插件与general_log类似，但粒度更细，并且general_log是同步，但官方的审计插件是异步的，性能更好。
+
+参数详解：
+    general_log：定义是否开启通用日志（bool值），建议关闭。
+    general_log_file：指定通用日志的文件名及保存路径，其默认的文件名为“机器名.log”。
+    log_output：定义通用日志保存的方式，其值为“FILE”、“TABLE”或“NONE”，如保存为“TABLE”其表名为“mysql.general_log”。
+
+如需实现审计功能，可通过MariaDB、Percona-server或Mcafee都提供了能在MySQL上使用的审计插件。

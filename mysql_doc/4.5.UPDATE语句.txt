@@ -1,0 +1,31 @@
+UPDATE
+
+单表UPDATE语法：
+    UPDATE [LOW_PRIORITY] [IGNORE] table_reference SET assignment_list [WHERE where_condition] [ORDER BY ...] [LIMIT row_count]
+
+    value:
+        {expr | DEFAULT}
+
+    assignment:
+        col_name = value
+
+    assignment_list:
+        assignment [, assignment] ...
+
+多表UPDATE语法：
+    UPDATE [LOW_PRIORITY] [IGNORE] table_references SET assignment_list [WHERE where_condition]
+
+mysql> SELECT * FROM t1;
+    +----+-----+
+    | id | num |
+    +----+-----+
+    |  1 |   1 |
+    +----+-----+
+mysql> UPDATE t1 SET id=id+1,num=id WHERE id=1;
+mysql> SELECT * FROM t1;
+    +----+-----+
+    | id | num |
+    +----+-----+
+    |  2 |   2 |
+    +----+-----+
+

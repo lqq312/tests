@@ -1,0 +1,78 @@
+INSERT
+
+语法1：
+    INSERT [LOW_PRIORITY | DELAYED | HIGH_PRIORITY] [IGNORE] [INTO] tbl_name [PARTITION (partition_name [, partition_name] ...)] [(col_name [, col_name] ...)] {VALUES | VALUE} (value_list) [, (value_list)] ... [ON DUPLICATE KEY UPDATE assignment_list]
+
+语法2：
+    INSERT [LOW_PRIORITY | DELAYED | HIGH_PRIORITY] [IGNORE] [INTO] tbl_name [PARTITION (partition_name [, partition_name] ...)] SET assignment_list [ON DUPLICATE KEY UPDATE assignment_list]
+
+语法3：
+    INSERT [LOW_PRIORITY | HIGH_PRIORITY] [IGNORE] [INTO] tbl_name [PARTITION (partition_name [, partition_name] ...)] [(col_name [, col_name] ...)] SELECT ... [ON DUPLICATE KEY UPDATE assignment_list]
+
+    value:
+        {expr | DEFAULT}
+
+    value_list:
+        value [, value] ...
+
+    assignment:
+        col_name = value
+
+    assignment_list:
+        assignment [, assignment] ...
+
+    IGNORE：当INSET的语句中的数据与已有数据中的主键或唯一键重复时忽略插入（见示例1）。
+    ON DUPLICATE KEY UPDATE assignment_list：当INSERT的数据与已有的主键或唯一键重复时将非主键或唯一键的值更新为指定数据（见示例2）。
+
+示例1：
+    mysql> SHOW CREATE TABLE t1\G
+        *************************** 1. row ***************************
+               Table: t1
+        Create Table: CREATE TABLE `t1` (
+          `id` int(11) NOT NULL,
+          `num` int(11) NOT NULL,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    mysql> SELECT * FROM t1;
+        +----+-----+
+        | id | num |
+        +----+-----+
+        |  1 |   2 |
+        +----+-----+
+    mysql> INSERT IGNORE INTO t1 (id,num) VALUE (1,1);
+        Query OK, 0 rows affected, 1 warning (0.01 sec)
+    mysql> SHOW WARNINGS;
+        +---------+------+---------------------------------------+
+        | Level   | Code | Message                               |
+        +---------+------+---------------------------------------+
+        | Warning | 1062 | Duplicate entry '1' for key 'PRIMARY' |
+        +---------+------+---------------------------------------+
+    mysql> SELECT * FROM t1;
+        +----+-----+
+        | id | num |
+        +----+-----+
+        |  1 |   2 |
+        +----+-----+
+
+示例2：
+    mysql> DESC t1;
+        +-------+---------+------+-----+---------+-------+
+        | Field | Type    | Null | Key | Default | Extra |
+        +-------+---------+------+-----+---------+-------+
+        | id    | int(11) | NO   | PRI | NULL    |       |
+        | num   | int(11) | NO   |     | NULL    |       |
+        +-------+---------+------+-----+---------+-------+
+    mysql> SELECT * FROM t1;
+        +----+-----+
+        | id | num |
+        +----+-----+
+        |  1 |   2 |
+        +----+-----+
+    mysql> INSERT INTO t1 (id, num) VALUE (1,1) ON DUPLICATE KEY UPDATE num=1;
+        Query OK, 2 rows affected (0.06 sec)
+    mysql> SELECT * FROM t1;
+        +----+-----+
+        | id | num |
+        +----+-----+
+        |  1 |   1 |
+        +----+-----+

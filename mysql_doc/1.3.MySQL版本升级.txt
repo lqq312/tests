@@ -1,0 +1,33 @@
+MySQL升级
+	Xtrabackup：使用Percona公司的“Xtrabackup”工具完成数据备份后再导入至新版本的库中。
+	mysql_upgrade：升级MySQL版本时执行该命令用于查找升级的MySQL服务器的不兼容的问题。
+
+MySQL 5.6升级至MySQL 5.7
+	1. 安全关闭MySQL5.6
+		# systemctl stop mysqld
+
+	2. 在新的数据库的配置文件中指定原库的数据目录、日志等目录的路径。
+		# vim /etc/my.cnf
+			[mysqld]
+			...
+			datadir=/database/mysql5.6/data
+			pid-file=/database/mysql5.6/run/mysqld.pid
+			log_bin=/database/mysql5.6/binlogs/master
+			log_error=/database/mysql5.6/logs/mysql.err
+			slow_query_log_file=/database/mysql5.6/logs/mysql.slow
+			...
+
+			[mysqld_safe]
+			socket=/database/mysql5.6/run/mysqld.sock
+			log-error=/database/mysql5.6/logs/mysql.err
+
+	3. 将原有的软链接重新链接至目标版本的数据库上
+		# rm -rf /usr/local/mysql
+		# ln -sv /usr/local/mysql-5.7.25-el7-x86_64 /usr/local/mysql
+
+	4. 将配置文件进行升级
+		# mysql_upgrade -uroot -hlocalhost -p --protocol=tcp -s
+
+	注意：mysql5.5与mysql5.6是兼容的，mysql5.6与mysql5.7也是相互兼容的，但在没有执行“mysql_upgrade”之前如启动的新版本的数据库服务则在“log-error”中会有很多的“Warning”，因此建议使用“-s”选项升级系统库。
+
+在mysql5.6升级至mysql5.7前可将系统库“mysql”cp至指定路径，当升级后有故障时可进行回退，在回退时需要将系统库的属主和属组修改为“mysql”。

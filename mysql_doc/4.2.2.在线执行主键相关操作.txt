@@ -1,0 +1,24 @@
+在线执行主键相关操作：
+	1、添加主键
+	2、删除主键
+	3、删除主键并添加另一个主键
+
+	+-------------------------------------------+----------+----------------+------------------------+------------------------+
+	|               Operation                   | In Place | Rebuilds Table | Permits Concurrent DML | Only Modifies Metadata |
+	+-------------------------------------------+----------+----------------+------------------------+------------------------+
+	| Adding a primary key                      | Yes *    | Yes *          | Yes                    | No                     |
+	| Dropping a primary key                    | No       | Yes            | No                     | No                     |
+	| Dropping a primary key and adding another | Yes      | Yes            | Yes                    | No                     |
+	+-------------------------------------------+----------+----------------+------------------------+------------------------+
+
+添加一个主键：
+	语法：
+		ALTER TABLE tbl_name ADD PRIMARY KEY (column), ALGORITHM=INPLACE, LOCK=NONE;
+
+删除一个主键：
+	语法：
+		ALTER TABLE tbl_name DROP PRIMARY KEY, ALGORITHM=COPY;
+
+删除主键并添加另一个主键：
+	语法：
+		ALTER TABLE tbl_name DROP PRIMARY KEY, ADD PRIMARY KEY (column), ALGORITHM=INPLACE, LOCK=NONE;
