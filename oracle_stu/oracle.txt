@@ -1,0 +1,449 @@
+oracle安装的坑
+1、dbca启动图形安装程序时候需要先执行
+export DISPLAY=本机ip(不是服务器ip而是自己ssh的电脑ip，需要装xmanager):0.0
+
+2、安装时字符集选择ZHS16GBK，否则中文会乱码
+3、oracle安装时runInstaller可能会中文乱码，只要将系统LANG设置为en_US.UTF-8即可，系统默认为zh_CN.UTF-8，设置后安装界面会显示成英文
+4、安装完成后需要以root身份执行一下2个脚本
+/u01/app/oraInventory/orainstRoot.sh
+/u01/app/oracle/product/12.2.0/db_1/root.sh
+
+5、安装完成后需要设置MAX_STRING_SIZE参数，步骤如下
+（1）shutdown immediate;
+（2）startup upgrade;
+（3）alter system set MAX_STRING_SIZE=EXTENDED scope=both;
+（4）@?/rdbms/admin/utl32k
+（5）shutdown immediate;
+	startup;
+		
+6、客户端连接报错 ORA-28040: No matching authentication protocol  12c的参数SQLNET.ALLOWED_LOGON_VERSION默认等于11。当使用ojdbc6.jar就会报错，这个问题或者使用ojdbc8.jar，或者在数据库服务器上的oracle/network/admin/sqlnet.ora文件添加一行
+SQLNET.ALLOWED_LOGON_VERSION=8，重启数据库，重新连接数据库，
+
+
+4、新建表空间
+create tablespace C5TESTDB logging datafile '/u01/app/oracle/oradata/vms3devdb/C5TESTDB01.dbf' size 20480m autoextend on next 10240m maxsize unlimited extent management local;
+alter tablespace C5TESTDB add datafile '/u01/app/oracle/oradata/VMS3DEVDB/C5TESTDB02.dbf' size 5120M autoextend on maxsize 32767M;
+#删除空的表空间，包含数据文件
+drop tablespace C5TESTDB including contents and datafiles;
+
+5、新建用户并赋权
+create user c5web identified by c5web default tablespace C5TESTDB;
+grant dba to c5web;
+grant execute on dbms_aq to c5web; 
+grant aq_administrator_role to c5web;
+grant execute on dbms_aqadm to c5web;
+grant execute on dbms_aq to c5web; 
+grant enqueue any queue,dequeue any queue to c5web;
+grant select on v_$statname to c5web;
+grant select on v_$sesstat to c5web;
+grant select on v_$session to c5web;
+grant select on v_$mystat to c5web;
+
+
+删除用户名下所有表和视图
+drop user C5WEB cascade;
+
+删除表空间，及对应的表空间文件也删除掉
+drop tablespace VMS3DEVDB including contents and datafiles cascade constraint;
+
+alter database datafile '/u01/app/oracle/oradata/VMS3DEVDB/datafile/vms10.dbf' offline drop;
+Oracle数据库中删除了表空间物理文件XXX.ora后导致用drop tablespace删除表空间失败，解决方法如下：
+
+　用sqlplus /nolog命令进入oracle数据库执行如下命令:
+　　sql>conn /as sysdba;
+　　sql>startup;（如果数据库已启动则不需要此命令）
+　　sql>alter database datafile ''/home/oracle/XXX.ora'' offline drop；（/home/oracle/XXX.ora为表空间文件的物理路径）
+　　sql>drop tablespace XXX；
+
+执行完后，重启数据库即可。
+
+select username,sid,serial# from v$session where username='c5web';
+
+查看用户使用的表空间：
+select default_tablespace from dba_users where username='C5WEB'
+查看表空间文件存放的位置：
+SELECT * FROM Dba_Data_Files  WHERE tablespace_name = 'VMS3DEVDB';
+
+查看数据库的service_name
+show parameter service 
+
+#查询服务器端字符集
+select userenv('language') from dual;
+ 
+#查询数据库有多少个实例
+ps -ef|grep ora_smon  ----已启动的实例
+cd $ORACLE_HOME/dbs,查看有多少个init*.ora文件，不包括init.ora文件    ---全部实例
+
+oracle多实例启动重启过程
+	切换到oracle用户
+	su - oracle
+
+	查看当前默认数据库实例id
+	echo $ORACLE_SID
+		vms3devdb
+	启动vms3devdb实例的监听器
+	lsnrctl start
+	连接数据库启动
+	sqlplus / as sysdba
+	startup
+	exit
+
+	切换数据库到另一个实例
+	export ORACLE_SID=IOT
+	启动监听器
+	lsnrctl start
+	连接数据库启动
+	sqlplus / as sysdba
+	startup
+	exit
+
+#关闭数据库
+shutdown immediate
+
+导出指定表
+expdp ycig/March17@IOT1 directory=DATA_DIR dumpfile=0717.dmp tables="(ALARM_INFO,V_ELECTRIC_VEHICLE)"
+expdp sgj/sgj@VMS3DEVDB directory=ORACLE_BASE dumpfile=2table.dmp tables=(v_vehicleinfo,p_department)
+
+导出数据库
+1、select * from dba_directories;       查看dba有哪些目录可以用
+expdp test/test directory=ORACLE_BASE dumpfile=test20190115.dmp logfile=test20190115.log [content=metadata_only(只导出表结构)]
+
+#导入
+#查看用户表空间
+select default_tablespace from dba_users where username='TEST';
+impdp sgj/sgj dumpfile=sgj20181213.dmp logfile=imp_sgj181214.log directory=dpdata remap_schema=sgj:sgj remap_tablespace=VMS3DEVDB:ycig transform=oid:n table_exists_action=replace
+
+注：remap_schema=原用户名:新用户名   remap_tablespace=原表空间名:新表空间名   
+	transform=oid:n  （只要用户和表空间其中任意一个不一致，都需要插入这条）
+
+impdp c5web/c5web directory=ORACLE_BASE dumpfile=c5web20190921.dmp logfile=0924.log  table_exists_action=replace
+oracle10g之后impdp的table_exists_action参数
+table_exists_action选项：{skip是如果已存在表，则跳过并处理下一个对象；append是为表增加数据；truncate是截断表，然后为其增加新数据；replace是删除已存在表，重新建表并追加数据}
+
+alarm_time>to_date('2019-03-01 01','yyyy-mm-dd hh24')
+
+
+ORA-12899: value too large for column ORGNAME (actual: 66, maximum: 60)
+原因：可能是2个库字符集不一样
+select userenv('language') from dual;
+修改字符集
+SQL>STARTUP MOUNT;
+SQL>ALTER SYSTEM ENABLE RESTRICTED SESSION;
+SQL>ALTER SYSTEM SET JOB_QUEUE_PROCESSES=0;
+SQL>ALTER SYSTEM SET AQ_TM_PROCESSES=0;
+SQL>ALTER DATABASE OPEN;
+SQL>ALTER DATABASE CHARACTER SET INTERNAL_USE ZHS16GBK; //跳过超子集检
+SQL>shutdown immediate;
+SQL>STARTUP;
+
+
+#收集统计信息
+execute dbms_stats.gather_schema_stats(ownname=>'sgj')
+
+查看已经删除的表
+select * from cat;
+
+删除归档日志方法
+oracle用户下
+rman
+connect target/
+DELETE ARCHIVELOG ALL COMPLETED BEFORE 'SYSDATE-7';  删除7天前的归档日志
+如果是在日志目录下手动删除了归档日志后需要执行以下2条命令
+crosscheck archivelog all;
+delete expired archivelog all;
+
+查询表空间使用情况
+SELECT Upper(F.TABLESPACE_NAME)         "表空间名",
+       D.TOT_GROOTTE_MB                 "表空间大小(M)",
+       D.TOT_GROOTTE_MB - F.TOTAL_BYTES "已使用空间(M)",
+       To_char(Round(( D.TOT_GROOTTE_MB - F.TOTAL_BYTES ) / D.TOT_GROOTTE_MB * 100, 2), '990.99')
+       || '%'                           "使用比",
+       F.TOTAL_BYTES                    "空闲空间(M)",
+       F.MAX_BYTES                      "最大块(M)"
+FROM   (SELECT TABLESPACE_NAME,
+               Round(Sum(BYTES) / ( 1024 * 1024 ), 2) TOTAL_BYTES,
+               Round(Max(BYTES) / ( 1024 * 1024 ), 2) MAX_BYTES
+        FROM   SYS.DBA_FREE_SPACE
+        GROUP  BY TABLESPACE_NAME) F,
+       (SELECT DD.TABLESPACE_NAME,
+               Round(Sum(DD.BYTES) / ( 1024 * 1024 ), 2) TOT_GROOTTE_MB
+        FROM   SYS.DBA_DATA_FILES DD
+        GROUP  BY DD.TABLESPACE_NAME) D
+WHERE  D.TABLESPACE_NAME = F.TABLESPACE_NAME
+ORDER  BY 1
+
+查询表空间是否自动扩展
+select file_name,autoextensible,increment_by from dba_data_files where tablespace_name = 'VMS3DEVDB';
+
+
+将临时表空间大小修改为10G
+alter database tempfile '/u01/oracle/app/oracle/oradata/VMS3DEVDB/datafile/o1_mf_temp_d7rgd7wx_.tmp' resize 10240M;
+
+查询临时表空间使用情况
+SELECT TABLESPACE_NAME, FILE_ID, FILE_NAME, BYTES/1024/1024 AS "SPACE(M)"
+  FROM DBA_TEMP_FILES
+  
+增加数据文件
+alter tablespace C5TESTDB add datafile '/u01/app/oracle/oradata/vms3devdb/C5TESTDB02.dbf' size 5120M autoextend on maxsize 32767M;
+
+查询用户使用的表空间：
+select username, default_tablespace, temporary_tablespace from dba_users where username='C5WEB';
+
+查询所有表空间对应存放的目录：
+select t1.name,t2.name from v$tablespace t1,v$datafile t2 where t1.ts# = t2.ts#;
+
+
+生成awr报表
+sqlplus / as sysdba
+@$ORACLE_HOME/rdbms/admin/awrrpt.sql
+1、生成文件格式 默认html，直接enter
+2、报告采集天数 可以输入1
+3、输入开始snap id
+4、输入结束snap id
+5、输入报表文件名   xxx.html
+
+
+
+oracle安装的坑
+1、dbca启动图形安装程序时候需要先执行
+export DISPLAY=本机ip(不是服务器ip而是自己ssh的电脑ip，需要装xmanager):0.0
+
+2、安装时字符集选择ZHS16GBK，否则中文会乱码
+
+3、安装完成后需要设置MAX_STRING_SIZE参数，步骤如下
+（1）shutdown immediate;
+（2）startup upgrade;
+（3）alter system set MAX_STRING_SIZE=EXTENDED scope=spfile;
+（4）@?/rdbms/admin/utl32k
+（5）shutdown immediate;
+	startup;
+
+4、新建表空间
+create tablespace ycig logging datafile '/u01/app/oracle/oradata/VMS3DEVDB/ycig01.dbf' size 10240m autoextend on next 1024m maxsize unlimited extent management local;
+
+5、新建用户并赋权
+create user sgjtest identified by sgjtest default tablespace YCIG;
+grant dba to sgjtest;
+grant execute on dbms_aq to sgjtest; 
+grant aq_administrator_role to sgjtest;
+grant execute on dbms_aqadm to sgjtest;
+grant execute on dbms_aq to sgjtest; 
+grant enqueue any queue,dequeue any queue to sgjtest;
+grant select on v_$statname to sgjtest;
+grant select on v_$sesstat to sgjtest;
+grant select on v_$session to sgjtest;
+grant select on v_$mystat to sgjtest;
+
+#查询服务器端字符集
+select userenv('language') from dual;
+ 
+#查询数据库有多少个实例
+ps -ef|grep ora_smon  ----已启动的实例
+cd $ORACLE_HOME/dbs,查看有多少个init*.ora文件，不包括init.ora文件    ---全部实例
+
+切换到oracle用户
+su - oracle
+
+查看当前默认数据库实例id
+echo $ORACLE_SID
+	vms3devdb
+启动vms3devdb实例的监听器
+lsnrctl start
+连接数据库启动
+sqlplus / as sysdba
+startup
+exit
+
+切换数据库到另一个实例
+export ORACLE_SID=IOT
+启动监听器
+lsnrctl start
+连接数据库启动
+sqlplus / as sysdba
+startup
+exit
+
+#关闭数据库
+shutdown immediate
+
+导出指定表
+expdp ycig/March17@IOT1 directory=DATA_DIR dumpfile=0717.dmp tables="(ALARM_INFO,V_ELECTRIC_VEHICLE)"
+
+expdp c5web/c5web@VMS3DEVDB directory=DATA_DIR dumpfile=1024.dmp tables=(B_SYS_ROLE_RIGHT,B_SYS_RIGHT,B_SYSROLE,B_SYSFUNCTION)
+
+导出数据库
+1、select * from dba_directories;       查看dba有哪些目录可以用
+
+删除用户名下所有表和视图
+drop user c5web cascade;
+
+--c5web
+expdp c5web/c5web directory=dpdata dumpfile=VMS3DEVDBl2017011819.dmp logfile=expdp011819.log 
+
+#导入
+#查看dba可用目录
+select * from dba_directories;
+
+impdp sgjtest/sgjtest  dumpfile=sgj20181213.dmp logfile=imp_c5web181214.log directory=dpdata remap_schema=c5web:sgjtest remap_tablespace=C5TESTDB:ycig transform=oid:n
+
+
+#收集统计信息
+execute dbms_stats.gather_schema_stats(ownname=>'c5web')
+
+查看已经删除的表
+select * from cat;
+
+查看归档是否开启：
+archive log list
+SQL> archive log list
+Database log mode	       Archive Mode
+Automatic archival	       Enabled
+Archive destination	       /arch
+Oldest online log sequence     9229
+Next log sequence to archive   9231
+Current log sequence	
+注：/arch 归档日志存放的目录
+
+删除归档日志方法
+oracle用户下
+rman
+connect target/
+DELETE ARCHIVELOG ALL COMPLETED BEFORE 'SYSDATE-7';  删除7天前的归档日志
+如果是在日志目录下手动删除了归档日志后需要执行以下2条命令
+crosscheck archivelog all;
+delete expired archivelog all;
+
+查询表空间使用情况
+SELECT Upper(F.TABLESPACE_NAME)         "表空间名",
+       D.TOT_GROOTTE_MB                 "表空间大小(M)",
+       D.TOT_GROOTTE_MB - F.TOTAL_BYTES "已使用空间(M)",
+       To_char(Round(( D.TOT_GROOTTE_MB - F.TOTAL_BYTES ) / D.TOT_GROOTTE_MB * 100, 2), '990.99')
+       || '%'                           "使用比",
+       F.TOTAL_BYTES                    "空闲空间(M)",
+       F.MAX_BYTES                      "最大块(M)"
+FROM   (SELECT TABLESPACE_NAME,
+               Round(Sum(BYTES) / ( 1024 * 1024 ), 2) TOTAL_BYTES,
+               Round(Max(BYTES) / ( 1024 * 1024 ), 2) MAX_BYTES
+        FROM   SYS.DBA_FREE_SPACE
+        GROUP  BY TABLESPACE_NAME) F,
+       (SELECT DD.TABLESPACE_NAME,
+               Round(Sum(DD.BYTES) / ( 1024 * 1024 ), 2) TOT_GROOTTE_MB
+        FROM   SYS.DBA_DATA_FILES DD
+        GROUP  BY DD.TABLESPACE_NAME) D
+WHERE  D.TABLESPACE_NAME = F.TABLESPACE_NAME
+ORDER  BY 1
+
+查询表空间是否自动扩展
+select file_name,autoextensible,increment_by from dba_data_files where tablespace_name = 'VMS3DEVDB';
+
+
+SELECT * FROM(SELECT A .tablespace_name,TO_CHAR (
+                A .bytes / 1024 / 1024,
+                '99,999.999'
+            ) total_bytes,
+            TO_CHAR (
+                b.bytes / 1024 / 1024,
+                '99,999.999'
+            ) free_bytes,
+            TO_CHAR (
+                A .bytes / 1024 / 1024 - b.bytes / 1024 / 1024,
+                '99,999.999'
+            ) use_bytes,
+            TO_CHAR (
+                (1 - b.bytes / A .bytes) * 100,
+                '99.99'
+            ) || '%' USE
+        FROM
+            (
+                SELECT
+                    tablespace_name,
+                    SUM (bytes) bytes
+                FROM
+                    dba_data_files
+                GROUP BY
+                    tablespace_name
+            ) A,
+            (
+                SELECT
+                    tablespace_name,
+                    SUM (bytes) bytes
+                FROM
+                    dba_free_space
+                GROUP BY
+                    tablespace_name
+            ) b
+        WHERE
+            A .tablespace_name = b.tablespace_name
+        UNION ALL
+            SELECT
+                c.tablespace_name,
+                TO_CHAR (
+                    c.bytes / 1024 / 1024,
+                    '99,999.999'
+                ) total_bytes,
+                TO_CHAR (
+                    (c.bytes - D .bytes_used) / 1024 / 1024,
+                    '99,999.999'
+                ) free_bytes,
+                TO_CHAR (
+                    D .bytes_used / 1024 / 1024,
+                    '99,999.999'
+                ) use_bytes,
+                TO_CHAR (
+                    D .bytes_used * 100 / c.bytes,
+                    '99.99'
+                ) || '%' USE
+            FROM
+                (
+                    SELECT
+                        tablespace_name,
+                        SUM (bytes) bytes
+                    FROM
+                        dba_temp_files
+                    GROUP BY
+                        tablespace_name
+                ) c,
+                (
+                    SELECT
+                        tablespace_name,
+                        SUM (bytes_cached) bytes_used
+                    FROM
+                        v$temp_extent_pool
+                    GROUP BY
+                        tablespace_name
+                ) D
+            WHERE
+                c.tablespace_name = D .tablespace_name
+    )
+
+将临时表空间大小修改为10G
+alter database tempfile '/u01/oracle/app/oracle/oradata/VMS3DEVDB/datafile/o1_mf_temp_d7rgd7wx_.tmp' resize 10240M;
+
+查询临时表空间使用情况
+SELECT TABLESPACE_NAME, FILE_ID, FILE_NAME, BYTES/1024/1024 AS "SPACE(M)"
+  FROM DBA_TEMP_FILES
+  
+增加数据文件
+alter tablespace C5TESTDB add datafile '/u01/oracle/app/oracle/oradata/VMS3DEVDB/C5TESTDB03.dbf' size 5120M autoextend on maxsize 32767M; 
+
+oracle使用expdp和impdp只导出和导入数据库表结构；
+场景：把一个用户的数据表结构导入到另外一个用户的表结构，方法如下：
+1. 赋目录权限给hdoa用户
+grant read,write on directory expbk to hdoa;
+
+2.当设置CONTENT为ALL 时,将导出对象定义及其所有数据.为DATA_ONLY时,只导出对象数据,为METADATA_ONLY时,只导出对象定义
+------其中使用METADATA_ONLY导出数据表结构
+expdp hdoa/hdoa DIRECTORY=expbk CONTENT=METADATA_ONLY DUMPFILE=hd20160114.dmp logfile=arp20160114.log
+
+3.导入操作CONTENT参数和remap_schema，其中hdoa:defDB是把hdoa下的表结构转义为DEFDB用户下
+impdp defDB/defDB DIRECTORY=EXPBK CONTENT=METADATA_ONLY DUMPFILE=hd20160114.dmp logfile=arp20160114_2.log remap_schema=hdoa:defDB
+
+
+
+
+
+
+
+
+
+
